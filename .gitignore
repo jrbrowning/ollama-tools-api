@@ -1,0 +1,69 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# python 
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Generated Files
+brew_packages.json
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+/tmp
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test.local
+.env.production.local
+
+# vercel
+.vercel
+
+# certificates
+certificates
+
+# supabase
+supabase/seed.sql
+supabase/dump-data.sql
+
+# Virutal env
+venv/
+
+# toolshed - developer tool repo
+toolshed
+
+# ollama local
+local_gpu/ollama.pid
+local_gpu/ollama.log
