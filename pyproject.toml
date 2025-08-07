@@ -19,6 +19,7 @@ openai = "^1.23.0"
 transitions = "^0.9.0"
 debugpy = "^1.8.1"
 dotenv = "^0.9.9"
+tiktoken = "^0.10.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -53,11 +54,15 @@ python_version = "3.11"
 ignore_missing_imports = true
 strict = true
 
-[tool.poe.tasks]
-debug-test = "python -Xfrozen_modules=off -m debugpy --listen 5678 --wait-for-client run_tests.py"
-test = "python run_tests.py"
-
 [tool.black]
 line-length = 100
 target-version = ["py311"]
 skip-string-normalization = false
+
+[tool.poe.tasks]
+debug-test = "python -Xfrozen_modules=off -m debugpy --listen 5678 --wait-for-client run_tests.py"
+test = "python run_tests.py"
+export-main = "python scripts/export_branch_txt_for_ollama.py --branch main"
+local-ollama-start = "python run_local_gpu.py up"
+local-ollama-stop = "python run_local_gpu.py stop"
+
