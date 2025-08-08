@@ -7,12 +7,15 @@ RUN apt-get update && \
 
 WORKDIR /app
 
+# First create the directory to ensure it exists
+# RUN mkdir -p /app/modelfiles
+
 # Copy the common startup script
 COPY lib/start.sh /app/
+COPY lib/modelfiles/system.txt /app/modelfiles
 RUN chmod +x /app/start.sh
 
-# First create the directory to ensure it exists
-RUN mkdir -p /app/modelfiles
+
 
 # Copy model-specific modelfile if it exists
 # ARG is only available during build time

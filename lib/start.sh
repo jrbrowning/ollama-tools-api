@@ -18,6 +18,9 @@ if [ "$OFFLINE_MODE" != "true" ] && [ "$OFFLINE_MODE" != "false" ]; then
     exit 1
 fi
 
+SYSTEM_FILE="/app/modelfiles/system.txt"
+TMP_MODELPATH="/tmp/Modelfile"
+
 # --- START OLLAMA SERVER ---
 log "🚀 Starting Ollama server"
 export OLLAMA_HOST=0.0.0.0
@@ -39,25 +42,51 @@ until curl -s "http://localhost:11434" | grep -q "Ollama is running"; do
 done
 log "✅ Ollama is reporting ready."
 
-# --- VERIFY OR PULL MODEL ---
-MODEL="$MODEL_NAME"
+# --- BUILD OR PULL MODEL ---
+if [ -f "$SYSTEM_FILE" ]; then
+    log "🧱 Found system prompt at $SYSTEM_FILE"
+    echo "FROM $MODEL_NAME" > "$TMP_MODELPATH"
+    echo "" >> "$TMP_MODELPATH"
+    cat "$SYSTEM_FILE" >> "$TMP_MODELPATH"
 
-if [ "$OFFLINE_MODE" == "true" ]; then
-    log "🔍 Checking if model '$MODEL' is cached locally..."
-    if ! ollama list | grep -q "$MODEL"; then
-        log "❌ Model '$MODEL' not found in local registry (offline mode enabled)"
+    log "🔍 Checking for existing model: $MODEL_NAME"
+    EXISTING_MODEL=$(ollama list | awk '{print $1}' | grep -Fx "$MODEL_NAME" || true)
+
+    if [ -n "$EXISTING_MODEL" ]; then
+        log "🗑️ Removing existing model '$MODEL_NAME' for rebuild..."
+        if ! ollama rm "$MODEL_NAME"; then
+            log "❌ Failed to remove model: $MODEL_NAME"
+            ollama list
+            exit 1
+        fi
+        log "✅ Removed model: $MODEL_NAME"
+    else
+        log "✅ No existing model found. Proceeding."
+    fi
+
+    log "🔨 Building model '$MODEL_NAME' with system prompt..."
+    if ! ollama create "$MODEL_NAME" -f "$TMP_MODELPATH"; then
+        log "❌ Failed to create model"
         exit 1
     fi
-    log "✅ Model '$MODEL' is cached and ready."
+    log "✅ Model '$MODEL_NAME' created successfully"
 else
-    log "📦 Pulling model '$MODEL' from registry..."
-    if ! ollama pull "$MODEL"; then
-        log "❌ Failed to pull model: $MODEL"
-        ollama list
-        exit 1
+    if [ "$OFFLINE_MODE" == "true" ]; then
+        log "🔍 Checking if model '$MODEL_NAME' is cached locally..."
+        if ! ollama list | grep -q "$MODEL_NAME"; then
+            log "❌ Model '$MODEL_NAME' not found in offline mode"
+            exit 1
+        fi
+        log "✅ Model '$MODEL_NAME' is cached and ready."
+    else
+        log "📦 Pulling model '$MODEL_NAME' from registry..."
+        if ! ollama pull "$MODEL_NAME"; then
+            log "❌ Failed to pull model"
+            exit 1
+        fi
+        log "✅ Model '$MODEL_NAME' successfully pulled."
     fi
-    log "✅ Model '$MODEL' successfully pulled."
 fi
 
-log "🏁 Startup complete. Ollama is serving model: $MODEL"
+log "🏁 Startup complete. Ollama is serving model: $MODEL_NAME"
 wait
