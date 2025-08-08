@@ -40,8 +40,8 @@ streamlit = "^1.47.0"
 
 [tool.ruff]
 line-length = 100
-select = ["E", "F", "B"]
-ignore = ["E501"]  # Ignore long lines, you can remove if using formatter
+lint.select = ["E", "F", "B"]
+lint.ignore = ["E501"]  # Ignore long lines, you can remove if using formatter
 exclude = ["tests/fixtures/"]
 
 [tool.ruff.format]
@@ -65,4 +65,6 @@ test = "python run_tests.py"
 export-main = "python scripts/export_branch_txt_for_ollama.py --branch main"
 local-ollama-start = "python run_local_gpu.py up"
 local-ollama-stop = "python run_local_gpu.py stop"
+local-ollama-rebuild = "python run_local_gpu.py rebuild"
+
 

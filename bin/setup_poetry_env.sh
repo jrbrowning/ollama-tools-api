@@ -1,10 +1,10 @@
+# File: scripts/setup_python_poetry.sh
 #!/bin/bash
-
-# Python + Poetry Environment Setup Script
-# Usage: source setup_python_poetry.sh
+# Usage: source scripts/setup_python_poetry.sh
+# Purpose: Create/use a local .venv next to pyproject.toml with pyenv + poetry
 
 # === CONFIGURATION ===
-MODE="local"  # Change to "global" for system-wide Python
+MODE="local"  # keep local-only
 PYTHON_VERSION="3.12.2"
 
 # === SCRIPT BOOTSTRAP ===
@@ -24,25 +24,38 @@ echo "Working dir: $CURRENT_DIR"
 echo "Python version: ${PYTHON_VERSION}"
 
 # === CHECK DEPENDENCIES ===
-if ! command -v pyenv &> /dev/null; then
+if ! command -v pyenv >/dev/null 2>&1; then
     echo -e "${RED}❌ pyenv not installed. Get it: https://github.com/pyenv/pyenv${NC}"
     return 1 2>/dev/null || exit 1
 fi
 
-if ! command -v poetry &> /dev/null; then
+if ! command -v poetry >/dev/null 2>&1; then
     echo -e "${YELLOW}🔄 Poetry not found. Installing...${NC}"
+    if ! command -v curl >/dev/null 2>&1; then
+        echo -e "${RED}❌ curl is required to install Poetry${NC}"
+        return 1 2>/dev/null || exit 1
+    fi
+    if ! command -v python3 >/dev/null 2>&1; then
+        echo -e "${RED}❌ python3 is required to bootstrap Poetry installer${NC}"
+        return 1 2>/dev/null || exit 1
+    fi
     curl -sSL https://install.python-poetry.org | python3 -
     export PATH="$HOME/.local/bin:$PATH"
-    if ! command -v poetry &> /dev/null; then
-        echo -e "${RED}❌ Poetry install failed. Add ~/.local/bin to PATH${NC}"
+    if ! command -v poetry >/dev/null 2>&1; then
+        echo -e "${RED}❌ Poetry install failed. Ensure ~/.local/bin is on PATH${NC}"
         return 1 2>/dev/null || exit 1
     else
         echo -e "${GREEN}✅ Poetry installed${NC}"
     fi
 fi
 
+# Ensure pyenv shims are active in THIS shell before using them
+if command -v pyenv >/dev/null 2>&1; then
+    eval "$(pyenv init -)"
+fi
+
 # === PYTHON INSTALL ===
-echo -e "${YELLOW}🔄 Installing Python ${PYTHON_VERSION} (if needed)...${NC}"
+echo -e "${YELLOW}🔄 Ensuring Python ${PYTHON_VERSION} is available...${NC}"
 pyenv install -s "$PYTHON_VERSION"
 
 # === EXECUTION MODE SWITCH ===
@@ -52,13 +65,22 @@ if [ "$MODE" = "local" ]; then
         echo -e "${GREEN}✅ Found pyproject.toml${NC}"
         pyenv local "$PYTHON_VERSION"
         poetry config virtualenvs.in-project true
-        poetry env use python
-        poetry install
 
+        # Bind Poetry to the exact pyenv interpreter (prevents wrong system python)
+        PY_BIN="$(pyenv which python)"
+        if [ -z "$PY_BIN" ]; then
+            echo -e "${RED}❌ Could not resolve pyenv python for ${PYTHON_VERSION}${NC}"
+            return 1 2>/dev/null || exit 1
+        fi
+        poetry env use "$PY_BIN"
+
+        poetry install --no-interaction
         if [ $? -eq 0 ]; then
-            VENV_PATH=$(poetry env info --path)
+            VENV_PATH="$(poetry env info --path)"
             echo -e "${BLUE}📁 .venv path: $VENV_PATH${NC}"
             if [ -d "$VENV_PATH" ]; then
+                # Activate into current shell session
+                # shellcheck disable=SC1090
                 source "$VENV_PATH/bin/activate"
                 echo -e "${GREEN}✅ Activated local .venv environment${NC}"
                 echo -e "${BLUE}🐍 Python: $(which python)${NC}"
@@ -73,11 +95,9 @@ if [ "$MODE" = "local" ]; then
     fi
 
 else
-    # === GLOBAL MODE ===
-    echo -e "${YELLOW}⚠️ MODE=global: No local project config used${NC}"
-    pyenv global "$PYTHON_VERSION"
-    echo -e "${GREEN}✅ Set Python ${PYTHON_VERSION} as global version${NC}"
-    python --version
+    # === GLOBAL MODE (intentionally disabled to keep it local/rock-solid) ===
+    echo -e "${YELLOW}⚠️ MODE=global disabled. This script is for local .venv only.${NC}"
+    return 2 2>/dev/null || exit 2
 fi
 
 echo -e "${GREEN}🎉 Setup complete! Mode: $MODE${NC}"
