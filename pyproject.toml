@@ -63,8 +63,10 @@ skip-string-normalization = false
 debug-test = "python -Xfrozen_modules=off -m debugpy --listen 5678 --wait-for-client run_tests.py"
 test = "python run_tests.py"
 export-main = "python scripts/export_branch_txt_for_ollama.py --branch main"
+ollama-capacity = "python scripts/model_support_check.py"
 local-ollama-start = "python run_local_gpu.py up"
 local-ollama-stop = "python run_local_gpu.py stop"
 local-ollama-rebuild = "python run_local_gpu.py rebuild"
+
 
 
