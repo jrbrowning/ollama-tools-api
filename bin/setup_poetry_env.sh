@@ -1,10 +1,9 @@
-# File: scripts/setup_python_poetry.sh
 #!/bin/bash
 # Usage: source scripts/setup_python_poetry.sh
 # Purpose: Create/use a local .venv next to pyproject.toml with pyenv + poetry
 
 # === CONFIGURATION ===
-MODE="local"  # keep local-only
+MODE="local"  # 
 PYTHON_VERSION="3.12.2"
 
 # === SCRIPT BOOTSTRAP ===
@@ -95,7 +94,7 @@ if [ "$MODE" = "local" ]; then
     fi
 
 else
-    # === GLOBAL MODE (intentionally disabled to keep it local/rock-solid) ===
+    # === GLOBAL MODE (intentionally disabled to keep it local) ===
     echo -e "${YELLOW}⚠️ MODE=global disabled. This script is for local .venv only.${NC}"
     return 2 2>/dev/null || exit 2
 fi

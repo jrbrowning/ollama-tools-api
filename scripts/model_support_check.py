@@ -12,6 +12,11 @@ from rich.markup import escape as rich_escape
 from rich.panel import Panel
 from rich.table import Table
 
+# ===== Configuration (single source of truth) =====
+# Default bits-per-parameter used for ALL calculations when quantization is unknown.
+MODEL_BITS_PER_PARAM: float = 5.25  # Default constant, do not modify
+# ==================================================
+
 ENV_PATH = ".env"
 MODEL_KEYS = [
     "LOCAL_GPU",
@@ -21,9 +26,12 @@ MODEL_KEYS = [
     "REASONING_MODEL_ALT",
 ]
 
+# Parse "<name>:<number>b" where <number> is the parameter count in billions
 RE_SIZE = re.compile(r":\s*([0-9]+(?:\.[0-9]+)?)\s*b\b", re.IGNORECASE)
+
 BYTES_IN_GIB = 1024**3
 BYTES_IN_GB = 1000**3
+GB_TO_GIB = BYTES_IN_GB / BYTES_IN_GIB  # ≈ 0.931322575
 
 DEFAULT_TIMEOUT_SEC = 5
 CONTROL_CHARS_RE = re.compile(r"[\x00-\x1f\x7f]")
@@ -99,8 +107,21 @@ def parse_param_b(model_spec: str) -> Optional[float]:
 
 
 def required_ram_gib(param_b: float) -> float:
-    # Need = 0.7 × params[billions], in GiB
-    return 0.7 * param_b
+    """
+    Compute required RAM in GiB for weights based on a single global bpp value.
+
+    Steps:
+      1) Decimal GB from params and bits/param:
+            GB = params[billions] × (MODEL_BITS_PER_PARAM / 8)
+      2) Convert GB → GiB for host/docker comparison:
+            GiB = GB × (10^9 / 2^30)
+
+    Returns:
+        float: required GiB (binary)
+    """
+    gb = param_b * (MODEL_BITS_PER_PARAM / 8.0)
+    gib = gb * GB_TO_GIB
+    return gib
 
 
 def docker_running() -> bool:
@@ -134,6 +155,8 @@ def get_docker_resources() -> Optional[Tuple[int, int]]:
 
 
 def main() -> None:
+    global MODEL_BITS_PER_PARAM
+
     ensure_macos()
     env = read_env(ENV_PATH)
 
@@ -173,7 +196,7 @@ def main() -> None:
 
     # === Table ===
     has_docker = docker_res is not None
-    table_title = "Model Support Check (Need = 0.7 × params[b], shown in GiB)"
+    table_title = f"Model Support Check (Need = params[b] × {MODEL_BITS_PER_PARAM:.2f}/8 GB → GiB)"
     table = Table(title=table_title)
     table.add_column("VAR", style="bold")
     table.add_column("MODEL")
@@ -224,7 +247,8 @@ def main() -> None:
                 table.add_row(key, safe_spec, "N/A", str(host_mem_gib), "[red]UNKNOWN[/red]")
             continue
 
-        need = round(required_ram_gib(param_b), 1)
+        need_gib = required_ram_gib(param_b)
+        need = round(need_gib, 2)
 
         # Host status
         host_status_supported = host_mem_gib >= need
@@ -247,19 +271,45 @@ def main() -> None:
             table.add_row(
                 key,
                 safe_spec,
-                f"{need:.1f}",
+                f"{need:.2f}",
                 str(host_mem_gib),
                 host_status,
                 str(docker_mem_gib),
                 docker_status,
             )
         else:
-            table.add_row(key, safe_spec, f"{need:.1f}", str(host_mem_gib), host_status)
+            table.add_row(key, safe_spec, f"{need:.2f}", str(host_mem_gib), host_status)
 
     console.print(table)
 
+    # === Notes / Education ===
+    # Compact educational line + 2 concrete examples using the ACTIVE bpp value.
+    try:
+        ex1_gb = 20.0 * (MODEL_BITS_PER_PARAM / 8.0)
+        ex1_gib = ex1_gb * GB_TO_GIB
+        ex2_gb = 8.0 * (MODEL_BITS_PER_PARAM / 8.0)
+        ex2_gib = ex2_gb * GB_TO_GIB
+    except Exception:
+        ex1_gb = ex1_gib = ex2_gb = ex2_gib = float("nan")
+
+    console.print(
+        Panel.fit(
+            "How sizing is computed:\n"
+            "• GB (decimal) = params[billions] × (bits per parameter ÷ 8)\n"
+            "• GiB (binary) = GB × (10^9 ÷ 2^30) ≈ GB × 0.931322575\n"
+            "• Parameterization = how many weights; Quantization = bits per weight; GB comes from both.\n"
+            f"Examples @ {MODEL_BITS_PER_PARAM:.2f} bpp:\n"
+            f"• 20B → {ex1_gb:.3f} GB ≈ {ex1_gib:.3f} GiB\n"
+            f"• 8B  → {ex2_gb:.3f} GB ≈ {ex2_gib:.3f} GiB\n"
+            f"(bpp source: {MODEL_BITS_PER_PARAM})\n"
+            "Diagnostics: NEED derives from ':<size>b' in the model spec; "
+            f"Docker metrics read from 'docker info --format {{json .}}'.",
+            title="Notes",
+            border_style="blue",
+        )
+    )
+
     # === Conclusions ===
-    # Host conclusion
     if host_supported:
         console.print(
             Panel(
@@ -278,7 +328,6 @@ def main() -> None:
             )
         )
 
-    # Docker conclusion
     if has_docker:
         if docker_supported:
             console.print(
@@ -298,18 +347,6 @@ def main() -> None:
                     border_style="red",
                 )
             )
-
-    # === Notes / Diagnostics ===
-    console.print(
-        Panel.fit(
-            "NEED is computed strictly from the ':<size>b' tag after the model name.\n"
-            "If a model lacks that tag, status is UNKNOWN.\n"
-            "Docker metrics are taken from the active context via 'docker info --format {{json .}}'.\n"
-            f"All subprocess calls use a {DEFAULT_TIMEOUT_SEC}s timeout to avoid hangs.",
-            title="Notes",
-            border_style="blue",
-        )
-    )
 
 
 if __name__ == "__main__":

@@ -98,7 +98,6 @@ services:
       - WEBUI_AUTH__REGISTER_DEFAULT_ADMIN=true
       - WEBUI_AUTH__DEFAULT_ADMIN_EMAIL=admin@example.com
       - WEBUI_AUTH__DEFAULT_ADMIN_PASSWORD=supersecurepassword
-      - WEBUI_AUTH__ENABLE=false
       - WEBUI_SECRET_KEY=your-very-secure-random-secret
       - OLLAMA_WEBUI_DEFAULT_USER=overlord
       - OLLAMA_WEBUI_DEFAULT_PASSWORD=ollama-local-army-ftw
