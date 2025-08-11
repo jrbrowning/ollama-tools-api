@@ -14,7 +14,7 @@ from rich.table import Table
 
 # === SETTINGS ===
 REPO_PATH = Path(".").resolve()
-EXPORT_ROOT = Path("./export_docs_export")
+EXPORT_ROOT = Path("./RAG_docs")
 INCLUDE_EXT = {
     ".py",
     ".ts",

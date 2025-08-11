@@ -1,3 +1,6 @@
+CONTEXT: FILE: bin/setup_poetry_env.sh
+BRANCH: main
+
 #!/bin/bash
 # Usage: source scripts/setup_python_poetry.sh
 # Purpose: Create/use a local .venv next to pyproject.toml with pyenv + poetry

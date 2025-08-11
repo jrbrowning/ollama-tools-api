@@ -1,3 +1,6 @@
+CONTEXT: FILE: pyproject.toml
+BRANCH: main
+
 [tool.poetry]
 name = "ollama-tools-api"
 version = "1.0.0"

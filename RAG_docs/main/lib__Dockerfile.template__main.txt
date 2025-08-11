@@ -1,0 +1,46 @@
+CONTEXT: FILE: lib/Dockerfile.template
+BRANCH: main
+
+FROM ollama/ollama:latest
+
+# Install curl using apt
+RUN apt-get update && \
+    apt-get install -y curl && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# First create the directory to ensure it exists
+# RUN mkdir -p /app/modelfiles
+
+# Copy the common startup script
+COPY lib/start.sh /app/
+COPY lib/modelfiles/system.txt /app/modelfiles
+RUN chmod +x /app/start.sh
+
+
+
+# Copy model-specific modelfile if it exists
+# ARG is only available during build time
+ARG MODEL_DIR
+# Use a safer approach that won't fail the build
+RUN echo "Copying modelfiles from ${MODEL_DIR} (if any)"
+# We'll handle the modelfiles in the startup script instead of here
+# to avoid Docker build errors with wildcards
+
+# # Environment variables will be populated from docker-compose
+# ENV MODEL_NAME=""
+# ENV PORT=""
+# ENV BASE_MODEL=""
+# ENV SYSTEM_PROMPT=""
+# ENV PARAMS=""
+
+EXPOSE 11434
+
+# Default command
+ENTRYPOINT ["/app/start.sh"]
+
+# % curl http://localhost:11434/api/generate -d '{
+#   "model": "llama3.2",
+#   "prompt": "What is your mission.   be brief and concise"
+# }'
