@@ -1,6 +1,6 @@
-## Building Tool-Calling patterns: OpenAI-compatible with Ollama
-- [Course Concept](#course-concept)
-    - [Using AI to Learn This Course: The Experiment](#using-ai-to-learn-this-course-the-experiment)
+## Thought Gym Series #1:  
+Building Tool-Calling patterns with OpenAI-compatible LLMs and Ollama
+- [Course Concept: Using AI to Learn This Course:](#course-concept-using-ai-to-learn-this-course)   
     - [Week 1: Starting from Zero](#week-1-starting-from-zero)
     - [Week 2: The Tool-Calling Journey](#week-2-the-tool-calling-journey)
     - [Week 3: Frontend Wire-up](#week-3-frontend-wire-up)
@@ -9,36 +9,49 @@
 
 ---
 
-_Overview_:
+**_Course Overview_:**
+
 This 3-week, 9-chapter course builds a full-stack LLM tool-calling system from scratch.
 
 **Week 1:** Python FastAPI backend with Pydantic validation, OpenAI-compatible tool calling, and SSE streaming. Everything runs locally via Docker and Ollama.
 
-**Week 2:** Continue backend development, focusing on tool-calling patterns, error handling, logging, and validation.
+**Week 2:** Continue backend development, focusing on tool-calling patterns, error handling, validation, and architecture decisions to frontend integration. 
 
 **Week 3:** TypeScript React frontend with shadcn, TailwindCSS, and Zustand for state management.
 
 By the end, you have a complete tool-calling application running on your machine with 5 local models. Every layer is yours to modify.
 
-## Course Concept
+## Course Concept: Using AI to Learn This Course: 
 
-### Using AI to Learn This Course: The Experiment
+Each chapter is released as a seperate branch (ie `01-chapter__python-poetry-docker-ollama`) which you can reference at any point later.   
 
-This course experiments with AI-assisted learning: use the provided prompts and RAG context to have AI explain the code to you. How well can today's AI teach tool calling? We'll discover together.
+The latest chapter will always be merged into `main`.   
 
-Reality today: Quantized models (which are nearly all local models) aren't great at code understanding, nor is Ollama truly SSE compliant, so it's slow at streaming.
+`git pull origin main` and you'll be up to date to the latest code.   
 
-Each chapter will include a directory with all files extracted as plain text with CONTENT and BRANCH labels. You can add these as documents to Ollama for natural language search with a model using `#`. I've included a custom system prompt that will load automatically to assist the models in interpreting them better.
+### The Experiment
+
+This course experiments with local AI-assisted learning: each chapter will start with fully operational code and you'll use prompts and RAG context to have AI explain the code to you to learn, whatever you'd like to learn about.  I call it the home thought gym.   
+
+How well can today's local AI teach tool-calling infrastructure? We'll discover together.
+
+Reality today: Quantized models (which are nearly all local models) aren't great at code understanding and Ollama isn't "truly" SSE compliant yet, so it's slow at streaming.  However...
+
+After intitial setup, you'll have 5 different LLM models* to interact with locally.  That feels empowering. 
+
+(* - if you have enough memory and CPUs:  See the prequirements and setup announcement)
+
+Each chapter will include a directory (RAGS_docs) with all files from that chapter extracted as plain text with CONTENT and BRANCH labels. You can add these as documents to Ollama for natural language search with a model using `#`. I've included a custom system prompt that will load automatically to assist the models in interpreting them better.
 
 ### Week 1: Starting from Zero
 
-Many tutorials assume you have a working development environment. Development setups are personal; if you have one that works, keep using it. This is the setup I used to build this course.
+Many tutorials assume you have a working development environment. Development setups are personal; if you have one that works, keep using it. I've included the setup I used to build this course.
 
 By Friday, you'll watch different models return radically different responses to the same prompt. Some models use `<think>` tags, others don't. This variety made me ask "how could I use these differences?" rather than treating all models as interchangeable.
 
 ### Week 2: The Tool-Calling Journey
 
-The OpenAI spec requires two requests for tool calling. When I discovered this, I realized tool-calling implementations hide this gap I never knew about. Knowing this now, I want to build a bridge first with error checking, logging, and validation before allowing the second request through.
+The OpenAI spec requires two requests for tool calling. When I discovered this, I realized tool call implementations hid this gap I never knew about. Knowing this now, I want to build a bridge first with error checking and validation before allowing the second request through.
 
 Week 2 concludes where our FastAPI endpoints streaming responses need rethinking for frontend integration. I didn't see this coming when I built it, and I want you to experience the same realization (but with the solution ready in the next part!)
 
@@ -46,7 +59,7 @@ Week 2 concludes where our FastAPI endpoints streaming responses need rethinking
 
 Here's where we build something deployable. A TypeScript React UI that could actually ship to production.
 
-But complexity comes back. Just because you can send SSE events doesn't mean your frontend knows what to do with them. How do you handle tool calls versus chat responses in your UI? We'll tackle all these questions.
+But complexity comes back. Just because you can send SSE events doesn't mean your frontend knows what to do with them. How could you handle tool calls versus chat responses in your UI? We'll tackle these questions.
 
 ---
 
