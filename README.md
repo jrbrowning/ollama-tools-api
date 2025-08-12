@@ -1,5 +1,4 @@
-## Thought Gym Series #1:  
-Building Tool-Calling patterns with OpenAI-compatible LLMs and Ollama
+##  Building Tool-Calling patterns with OpenAI-compatible LLMs and Ollama
 - [Course Concept: Using AI to Learn This Course:](#course-concept-using-ai-to-learn-this-course)   
     - [Week 1: Starting from Zero](#week-1-starting-from-zero)
     - [Week 2: The Tool-Calling Journey](#week-2-the-tool-calling-journey)
@@ -29,7 +28,7 @@ The latest chapter will always be merged into `main`.
 
 `git pull origin main` and you'll be up to date to the latest code.   
 
-### The Experiment
+## The Experiment
 
 This course experiments with local AI-assisted learning: each chapter will start with fully operational code and you'll use prompts and RAG context to have AI explain the code to you to learn, whatever you'd like to learn about.  I call it the home thought gym.   
 
@@ -90,3 +89,6 @@ Chapter 5 implements the OpenAI spec's required pattern: tool call request → e
 The synthesis pattern is a building block. You could use it to build many of the above architectures, but the pattern itself isn't an agent - it's the two-phase execution the OpenAI spec defines.
 
 Using precise terms clarifies what we're building: tool-calling with synthesis, not autonomous decision loops.
+
+----
+Disclaimer: This course is an independent project. I am not affiliated with, sponsored by, or endorsed by any of the companies or creators of the tools mentioned. All opinions and statements are my own and do not represent those of any company.
