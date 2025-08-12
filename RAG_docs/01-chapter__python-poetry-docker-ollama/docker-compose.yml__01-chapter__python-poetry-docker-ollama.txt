@@ -1,3 +1,6 @@
+CONTEXT: FILE: docker-compose.yml
+BRANCH: 01-chapter__python-poetry-docker-ollama
+
 services:
   traditional_model:
     build:
@@ -87,59 +90,21 @@ services:
         max-size: "100m"
         max-file: "3"
 
-  api_server:
-    build:
-      context: ./fastapi_server
-      dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
-      - "5678:5678" # Debuggy port for FastAPI
-    volumes:
-      - ./fastapi_server/api:/app/api
-    container_name: api_server
-    environment:
-      LOG_LEVEL: "INFO"
-      MODEL_SERVERS: "traditional_model,reasoning_model,traditional_model_alt,reasoning_model_alt"
-      DEFAULT_MODEL_SERVER: "traditional_model"
-      ENABLE_LOCAL_GPU_MODEL: ${ENABLE_LOCAL_GPU_MODEL}
-      LOCAL_GPU: ${LOCAL_GPU}
-      TRADITIONAL_MODEL: ${TRADITIONAL_MODEL}
-      TRADITIONAL_MODEL_ALT: ${TRADITIONAL_MODEL_ALT}
-      REASONING_MODEL: ${REASONING_MODEL}
-      REASONING_MODEL_ALT: ${REASONING_MODEL_ALT}
-    depends_on:
-      - traditional_model
-      - reasoning_model
-      - traditional_model_alt
-      - reasoning_model_alt
-    networks:
-      - internal_net
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "100m"
-        max-file: "3"
-
   ollama-webui:
     image: ghcr.io/ollama-webui/ollama-webui:main
     container_name: ollama-webui
     ports:
       - "8080:8080"
     environment:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
       - WEBUI_AUTH__ENABLE=true
       - WEBUI_AUTH__REGISTER_DEFAULT_ADMIN=true
       - WEBUI_AUTH__DEFAULT_ADMIN_EMAIL=admin@example.com
       - WEBUI_AUTH__DEFAULT_ADMIN_PASSWORD=supersecurepassword
-      - WEBUI_AUTH__ENABLE=false
       - WEBUI_SECRET_KEY=your-very-secure-random-secret
       - OLLAMA_WEBUI_DEFAULT_USER=overlord
       - OLLAMA_WEBUI_DEFAULT_PASSWORD=ollama-local-army-ftw
       - OLLAMA_DEFAULT_MODEL=llama3.1:8b
-    depends_on:
-      - traditional_model
-      - reasoning_model
     restart: unless-stopped
     networks:
       - internal_net

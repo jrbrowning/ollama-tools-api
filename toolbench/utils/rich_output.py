@@ -1,0 +1,83 @@
+# File: utils/rich_output.py
+
+import json
+import re
+
+from rich.console import Console
+from rich.panel import Panel
+from rich.syntax import Syntax
+from rich.table import Table
+from rich.text import Text
+
+from models.stage_http_output import (
+    StageHTTPStreamOutput,
+    StageHttpTextOutput,
+    StageHttpToolCallOutput,
+)
+
+console = Console()
+
+
+def print_text_stage_output(result: StageHttpTextOutput) -> None:
+    title = f"[bold blue]Text Output[/bold blue] — [green]{result.status.state}[/green]"
+    text = result.text or "[italic red]No text returned[/italic red]"
+    panel = Panel(Text(text), title=title, subtitle=f"Stage ID: {result.stage_id}", expand=True)
+    console.print(panel)
+
+
+def print_tool_call_output(result: StageHttpToolCallOutput) -> None:
+    table = Table(title=f"Tool Call Output — {result.status.state}", show_lines=True)
+    table.add_column("Tool Call ID", style="bold cyan")
+    table.add_column("Result", style="white")
+
+    if result.tool_results:
+        for tool_id, output in result.tool_results.items():
+            table.add_row(tool_id, output)
+    else:
+        table.add_row("[italic]No tool results[/italic]", "")
+
+    console.print(table)
+    console.print(f"[dim]Stage ID:[/dim] {result.stage_id}")
+
+
+def expand_stream_events(events: str) -> None:
+    raw_entries = re.findall(
+        r"id:\s*(.*?)\s*event:\s*(.*?)\s*data:\s*(\{.*?\})(?=\s*(id:|\Z))",
+        events,
+        re.DOTALL,
+    )
+
+    for i, (id_val, event_val, json_blob, _) in enumerate(raw_entries):
+        try:
+            parsed = json.loads(json_blob)
+            display_payload = {
+                "id": id_val.strip(),
+                "event": event_val.strip(),
+                "data": parsed,  # 👈 correctly preserve nesting
+            }
+
+            syntax = Syntax(
+                json.dumps(display_payload, indent=2),
+                "json",
+                theme="monokai",
+                line_numbers=True,
+            )
+            console.rule(f"[bold cyan]Event {i}")
+            console.print(syntax)
+
+        except json.JSONDecodeError as err:
+            console.print(f"[red]Malformed JSON in event {i}: {err}[/red]")
+
+
+def print_stream_output(result: StageHTTPStreamOutput) -> None:
+    events_text = result.events or "[italic red]No events received[/italic red]"
+    panel = Panel(
+        Text(events_text),
+        title="[bold magenta]Raw Streamed Events[/bold magenta]",
+        subtitle=f"Stage ID: {result.stage_id} — {result.status.state}",
+        expand=True,
+    )
+    console.print(panel)
+
+    # Expanded view
+    expand_stream_events(events_text)

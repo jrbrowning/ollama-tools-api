@@ -1,0 +1,23 @@
+# File: models/llm_response.py
+
+from typing import Dict, Literal, Optional
+
+from pydantic import BaseModel
+
+
+class TextStageOutput(BaseModel):
+    stage_id: str
+    type: Literal["text"]
+    text: Optional[str] = None
+
+
+class ToolStageOutput(BaseModel):
+    stage_id: str
+    type: Literal["tool_results"]
+    tool_results: Optional[Dict[str, str]] = None
+
+
+class CompletionErrorOutput(BaseModel):
+    stage_id: str
+    type: Literal["error"] = "error"
+    message: str

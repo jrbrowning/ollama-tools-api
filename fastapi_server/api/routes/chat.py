@@ -1,0 +1,57 @@
+# File: fastapi_server/api/routes/chat.py
+from typing import Any, Dict, Union
+
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response, StreamingResponse
+from models.llm_request import LLMRequest
+
+from api.config.model_routes import model_map, model_service_map
+from api.handlers.chat_runner import run_chat_completion
+
+router = APIRouter()
+
+
+@router.post("/chat_completion/v1", response_model=None)
+async def handle_chat(
+    payload: LLMRequest,
+) -> Union[Dict[str, Any], Response, StreamingResponse]:
+    """Handle atomic tool execution requests (single stage)"""
+
+    # Validate model exists in our config
+    if payload.model_container not in model_map:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown model: {payload.model_container}. Available models: {list(model_map.keys())}",
+        )
+
+    # Get the actual model name from our config
+    actual_model_name = model_map[payload.model_container]
+    if not actual_model_name:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Model {payload.model_container} is not configured. Check environment variables.",
+        )
+
+    # Get the base URL from our config
+    base_url = model_service_map.get(payload.model_container)
+    if not base_url:
+        raise HTTPException(
+            status_code=400, detail=f"No service configured for model: {payload.model_container}"
+        )
+
+    # Add /v1 suffix to base URL
+    full_base_url = f"{base_url}/v1"
+
+    # Call the atomic execution logic with centralized config
+    result = await run_chat_completion(
+        stage_id=payload.stage_id,
+        base_url=full_base_url,
+        model_name=actual_model_name,
+        user_prompt=payload.user_prompt,
+        system_prompt=payload.system_prompt,
+        stream=payload.stream or False,  # This is the temporary fix for stream brittleness
+        max_tokens=payload.max_tokens,
+        temperature=payload.temperature,
+    )
+
+    return result

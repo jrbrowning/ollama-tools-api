@@ -1,3 +1,6 @@
+CONTEXT: FILE: lib/Dockerfile.template
+BRANCH: 01-chapter__python-poetry-docker-ollama
+
 FROM ollama/ollama:latest
 
 # Install curl using apt
@@ -7,19 +10,15 @@ RUN apt-get update && \
 
 WORKDIR /app
 
+# First create the directory to ensure it exists
+# RUN mkdir -p /app/modelfiles
+
 # Copy the common startup script
 COPY lib/start.sh /app/
+COPY lib/modelfiles/system.txt /app/modelfiles
 RUN chmod +x /app/start.sh
 
-# Create target directory to avoid missing path issues
-RUN mkdir -p /app/modelfiles
 
-# Conditionally copy system.txt if it exists in build context
-RUN if [ -f lib/modelfiles/system.txt ]; then \
-        cp lib/modelfiles/system.txt /app/modelfiles/ ; \
-    else \
-        echo "No system.txt found, skipping copy."; \
-    fi
 
 # Copy model-specific modelfile if it exists
 # ARG is only available during build time

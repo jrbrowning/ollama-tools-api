@@ -1,0 +1,34 @@
+# File: fastapi_server/api/main.py
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from api.core.http_client import client_manager
+from api.routes.chat import router as chat_router
+from api.routes.completion import router as completion_router
+from api.routes.health import router as health_router
+from api.routes.stream import router as stream_router
+from api.routes.toolchain import router as toolchain_route
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    print("🔧 Starting client manager...")
+    await client_manager.start()
+    print("✅ Client manager started")
+    yield
+    print("🔻 Stopping client manager...")
+    await client_manager.stop()
+    print("✅ Client manager stopped")
+
+
+app = FastAPI(lifespan=lifespan, title="Ollama Docker API Router")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+app.include_router(chat_router)
+app.include_router(toolchain_route)
+app.include_router(health_router)
+app.include_router(completion_router)  # POST /completion/v1/{chat,toolchain}
+app.include_router(stream_router)  # POST /stream/v1/{chat,toolchain}
