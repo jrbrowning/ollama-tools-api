@@ -90,3 +90,6 @@ Chapter 5 implements the OpenAI spec's required pattern: tool call request → e
 The synthesis pattern is a building block. You could use it to build many of the above architectures, but the pattern itself isn't an agent - it's the two-phase execution the OpenAI spec defines.
 
 Using precise terms clarifies what we're building: tool-calling with synthesis, not autonomous decision loops.
+
+---
+Disclaimer: This course is an independent project. I am not affiliated with, sponsored by, or endorsed by any of the companies or creators of the tools mentioned. All opinions and statements are my own and do not represent those of any company.
