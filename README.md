@@ -1,5 +1,4 @@
-## Thought Gym Series #1:  
-Building Tool-Calling patterns with OpenAI-compatible LLMs and Ollama
+##  Building Tool-Calling patterns with OpenAI-compatible LLMs and Ollama
 - [Course Concept: Using AI to Learn This Course:](#course-concept-using-ai-to-learn-this-course)   
     - [Week 1: Starting from Zero](#week-1-starting-from-zero)
     - [Week 2: The Tool-Calling Journey](#week-2-the-tool-calling-journey)
