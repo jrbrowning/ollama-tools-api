@@ -12,7 +12,7 @@ TEST_CASES = [
             stream=False,
             prompt_tool_spec=ToolchainPromptSpec(
                 strategy="chat_completion",
-                max_tokens=1024,
+                max_tokens=128,
                 temperature=1.0,
             ),
             synthesis=False,
@@ -28,7 +28,7 @@ TEST_CASES = [
             stream=False,
             prompt_tool_spec=ToolchainPromptSpec(
                 strategy="chat_completion",
-                max_tokens=1024,
+                max_tokens=128,
                 temperature=1.0,
             ),
             synthesis=False,
@@ -44,7 +44,7 @@ TEST_CASES = [
             stream=False,
             prompt_tool_spec=ToolchainPromptSpec(
                 strategy="chat_completion",
-                max_tokens=512,
+                max_tokens=128,
                 temperature=1.0,
             ),
             synthesis=False,
@@ -60,7 +60,7 @@ TEST_CASES = [
             stream=False,
             prompt_tool_spec=ToolchainPromptSpec(
                 strategy="chat_completion",
-                max_tokens=512,
+                max_tokens=128,
                 temperature=1.0,
             ),
             synthesis=False,
@@ -76,7 +76,7 @@ TEST_CASES = [
             stream=False,
             prompt_tool_spec=ToolchainPromptSpec(
                 strategy="chat_completion",
-                max_tokens=512,
+                max_tokens=128,
                 temperature=1.0,
             ),
             synthesis=False,

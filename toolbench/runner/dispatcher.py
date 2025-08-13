@@ -92,7 +92,7 @@ def _map_llm_response(
             text=llm_result.get("text"),
             status=StageInfo(
                 state="success",
-                message="Tool Call(s) Successful",
+                message="Completion Successful",
                 code=None,
             ),
         )
