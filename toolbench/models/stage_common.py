@@ -1,15 +1,20 @@
 # File: toolbench/models/stage_common.py
+from typing import Literal, Optional
+
 from pydantic import BaseModel, field_validator
-from typing import Optional, Literal
+
 
 class StageInfo(BaseModel):
     state: Literal["idle", "executing", "success", "failed"]
     code: str | None = None
     message: str | None = None
     # Future latency metrics
-    request_latency_ms: Optional[float] = None       # Total time from request to response (input to output)
-    execution_latency_ms: Optional[float] = None     # Time spent executing the core logic 
-    upstream_latency_ms: Optional[float] = None      # Remote service / external call latency
+    request_latency_ms: Optional[float] = (
+        None  # Total time from request to response (input to output)
+    )
+    execution_latency_ms: Optional[float] = None  # Time spent executing the core logic
+    upstream_latency_ms: Optional[float] = None  # Remote service / external call latency
+
 
 class StageIdValidatorMixin(BaseModel):
     stage_id: str
@@ -18,10 +23,9 @@ class StageIdValidatorMixin(BaseModel):
     @classmethod
     def validate_stage_id(cls, v: str) -> str:
         import uuid
+
         try:
             uuid.UUID(v)
         except ValueError:
-            raise ValueError("stage_id must be a valid UUID")
+            raise ValueError("stage_id must be a valid UUID") from None
         return v
-    
-    
