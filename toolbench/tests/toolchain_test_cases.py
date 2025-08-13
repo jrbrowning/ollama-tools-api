@@ -3,9 +3,8 @@
 from models.toolchain_test_case import ToolchainModelStage, ToolchainPromptSpec, ToolchainTestCase
 
 TEST_CASES = [
-        # Mode 1: Chat Completion (Non-Streaming)
     ToolchainTestCase(
-        id="chat_completion",
+        id="chat_completion_1",
         stage_a=ToolchainModelStage(
             system_prompt="You are a helpful travel assistant.",
             user_prompt="Tell me a little about how the streets are named in Washington, DC.",
@@ -14,6 +13,70 @@ TEST_CASES = [
             prompt_tool_spec=ToolchainPromptSpec(
                 strategy="chat_completion",
                 max_tokens=1024,
+                temperature=1.0,
+            ),
+            synthesis=False,
+        ),
+        evaluation=False,
+    ),
+    ToolchainTestCase(
+        id="chat_completion_2",
+        stage_a=ToolchainModelStage(
+            system_prompt="You are a helpful travel assistant.",
+            user_prompt="Tell me a little about how the streets are named in Washington, DC.",
+            model_container="traditional_alt",
+            stream=False,
+            prompt_tool_spec=ToolchainPromptSpec(
+                strategy="chat_completion",
+                max_tokens=1024,
+                temperature=1.0,
+            ),
+            synthesis=False,
+        ),
+        evaluation=False,
+    ),
+    ToolchainTestCase(
+        id="chat_completion_3",
+        stage_a=ToolchainModelStage(
+            system_prompt="You are a helpful travel assistant.",
+            user_prompt="Tell me a little about how the streets are named in Washington, DC.",
+            model_container="reasoning",
+            stream=False,
+            prompt_tool_spec=ToolchainPromptSpec(
+                strategy="chat_completion",
+                max_tokens=512,
+                temperature=1.0,
+            ),
+            synthesis=False,
+        ),
+        evaluation=False,
+    ),
+    ToolchainTestCase(
+        id="chat_completion_4",
+        stage_a=ToolchainModelStage(
+            system_prompt="You are a helpful travel assistant.",
+            user_prompt="Tell me a little about how the streets are named in Washington, DC.",
+            model_container="reasoning_alt",
+            stream=False,
+            prompt_tool_spec=ToolchainPromptSpec(
+                strategy="chat_completion",
+                max_tokens=512,
+                temperature=1.0,
+            ),
+            synthesis=False,
+        ),
+        evaluation=False,
+    ),
+    ToolchainTestCase(
+        id="chat_completion_5",
+        stage_a=ToolchainModelStage(
+            system_prompt="You are a helpful travel assistant.",
+            user_prompt="Tell me a little about how the streets are named in Washington, DC.",
+            model_container="local_gpu",
+            stream=False,
+            prompt_tool_spec=ToolchainPromptSpec(
+                strategy="chat_completion",
+                max_tokens=512,
                 temperature=1.0,
             ),
             synthesis=False,

@@ -133,7 +133,7 @@ async def openai_toolchain_completion_stream(
     system_prompt: str,
     max_tokens: list[int],
     temperature: list[float],
-    synthesis: bool | None= False,
+    synthesis: bool | None = False,
 ) -> StreamingResponse:
     client = get_openai_client(base_url)
     registry = ToolRegistry([GetWeatherTool()])

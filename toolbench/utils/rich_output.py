@@ -3,25 +3,35 @@
 import json
 import re
 
+from models.stage_http_output import (
+    StageHTTPStreamOutput,
+    StageHttpTextOutput,
+    StageHttpToolCallOutput,
+)
 from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
 
-from models.stage_http_output import (
-    StageHTTPStreamOutput,
-    StageHttpTextOutput,
-    StageHttpToolCallOutput,
-)
-
 console = Console()
 
 
 def print_text_stage_output(result: StageHttpTextOutput) -> None:
     title = f"[bold blue]Text Output[/bold blue] — [green]{result.status.state}[/green]"
-    text = result.text or "[italic red]No text returned[/italic red]"
-    panel = Panel(Text(text), title=title, subtitle=f"Stage ID: {result.stage_id}", expand=True)
+    # Pretty-print the result object as JSON using rich
+    try:
+        result_json = json.dumps(result.model_dump(), indent=2)
+    except AttributeError:
+        # Fallback if model_dump is not available
+        result_json = json.dumps(result.__dict__, indent=2)
+    syntax = Syntax(result_json, "json", theme="monokai", line_numbers=True)
+    console.print(syntax)
+    if result.text:
+        text = Text(result.text, style="white")
+    else:
+        text = Text("No text returned", style="italic red")
+    panel = Panel(text, title=title, subtitle=f"Stage ID: {result.stage_id}", expand=True)
     console.print(panel)
 
 
@@ -37,7 +47,7 @@ def print_tool_call_output(result: StageHttpToolCallOutput) -> None:
         table.add_row("[italic]No tool results[/italic]", "")
 
     console.print(table)
-    console.print(f"[dim]Stage ID:[/dim] {result.stage_id}")
+    console.print(result.status.model_dump_json(indent=2, exclude_none=True))
 
 
 def expand_stream_events(events: str) -> None:

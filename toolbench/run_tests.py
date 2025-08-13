@@ -14,7 +14,7 @@ async def run_all_tests():
         test_label = f"Test {i}: {test_case.id} | Mode: {test_case.stage_a.prompt_tool_spec.strategy} | Stage A: {test_case.stage_a.model_container} | Stage B: {getattr(test_case.stage_b, 'model_container', 'None')}"
         try:
             result = await execute_test_case(test_case)
-            print(f"✅ {test_label} - Success")
+            print(f"✅ {test_label} - Completed")
             print(result)
         except Exception as e:
             print(f"❌ {test_label} - Unexpected Error: {type(e).__name__}")

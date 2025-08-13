@@ -1,14 +1,15 @@
 # File: toolbench/runner/dispatcher.py
 
-from typing import Any, Dict, Union, AsyncGenerator
-import httpx
+from typing import Any, AsyncGenerator, Dict, Union
 
+import httpx
 from models.llm_request import LLMRequest
 from models.stage_http_output import (
     StageHttpTextOutput,
     StageHttpToolCallOutput,
     StageInfo,
 )
+
 
 async def execute_toolchain_stage(
     request: LLMRequest,
@@ -19,21 +20,26 @@ async def execute_toolchain_stage(
     AsyncGenerator[str, None],
 ]:
     if request.stream:
+
         async def sse_line_stream() -> AsyncGenerator[str, None]:
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                async with client.stream("POST", endpoint_override, json=request.model_dump()) as resp:
+            async with httpx.AsyncClient(timeout=90.0) as client:
+                async with client.stream(
+                    "POST", endpoint_override, json=request.model_dump()
+                ) as resp:
                     async for line in resp.aiter_lines():
                         if line:
                             yield line
 
         return sse_line_stream()
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    async with httpx.AsyncClient(timeout=90.0) as client:
         return await _non_streaming_stage(client, request, endpoint_override)
-    
+
+
 # ────────────────────────────────
 # Non-Streaming (JSON POST → JSON)
 # ────────────────────────────────
+
 
 async def _non_streaming_stage(
     client: httpx.AsyncClient,
@@ -59,8 +65,9 @@ async def _non_streaming_stage(
 # Mapper for Final Output
 # ────────────────────────────────
 
+
 def _map_llm_response(
-    llm_result: Dict[str, Any]
+    llm_result: Dict[str, Any],
 ) -> Union[StageHttpTextOutput, StageHttpToolCallOutput]:
     stage_id = llm_result.get("stage_id", "")
 
@@ -72,10 +79,10 @@ def _map_llm_response(
             type="tool_results",
             tool_results=results,
             status=StageInfo(
-                    state="success",
-                    message="Tool Call(s) Successful",
-                    code=None,
-                ),
+                state="success",
+                message="Tool Call(s) Successful",
+                code=None,
+            ),
         )
 
     if llm_result.get("type") in ("text", "error"):
@@ -84,10 +91,10 @@ def _map_llm_response(
             type=llm_result["type"],
             text=llm_result.get("text"),
             status=StageInfo(
-                        state="success",
-                        message="Tool Call(s) Successful",
-                        code=None,
-                    ),        
+                state="success",
+                message="Tool Call(s) Successful",
+                code=None,
+            ),
         )
 
     return StageHttpTextOutput(

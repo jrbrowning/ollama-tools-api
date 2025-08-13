@@ -24,7 +24,7 @@ WORKDIR /app
 COPY --chown=appuser:appuser pyproject.toml poetry.lock* ./
 
 # Copy environment files
-COPY --chown=appuser:appuser .env.local .env.development ./
+# COPY --chown=appuser:appuser .env.local .env.development ./
 
 # Copy health check script
 COPY --chown=appuser:appuser health-check.sh ./health-check.sh
