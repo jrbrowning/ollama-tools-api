@@ -1,0 +1,90 @@
+# File: toolbench/models/events.py
+from typing import Optional, Any, Union
+from pydantic import BaseModel
+
+from openai.types.chat import ChatCompletionChunk
+
+# Stream Mode:
+# chunk.choices[0].delta 
+# 
+# This choices array contains a single object with the following structure:
+# - delta: Contains the incremental changes to the chat completion.
+# --> delta.content: The text content of the message.
+# --> delta.tool_calls: A list of tool calls made by the model.
+# - finish_reason: Indicates why the model stopped generating tokens.
+
+# Contains      | Interpreted As
+# -------------------------------------|--------------------------
+# { "content": "..." }                 | Text response (Chat-only stream)
+# { "tool_calls": [ ... ] }            | Structured function call (Tool call stream)
+# { "role": "assistant" }              | Role prefix (1st chunk only, Chat start)
+# {} with finish_reason: "stop"        | Final signal (Chat end)
+
+
+class ChatCompletionStreamPayload(BaseModel):
+    stage_id: str
+    chunk: ChatCompletionChunk
+
+
+class ToolCompletionStreamPayload(BaseModel):
+    stage_id: str
+    tool_results: Any
+    """
+    The results of the tool calls executed by the toolchain.
+    This can include various types of data depending on the tools used.
+    """
+
+class DonePayload(BaseModel):
+    stage_id: str
+
+
+class CancelPayload(BaseModel):
+    stage_id: str
+
+
+class ErrorPayload(BaseModel):
+    stage_id: str
+    error: str
+
+
+SSEPayload = Union[
+    ChatCompletionStreamPayload,
+    ToolCompletionStreamPayload,
+    DonePayload,
+    CancelPayload,
+    ErrorPayload,
+]
+
+class SSEEvent(BaseModel):
+    id: Optional[str]
+    event: str
+    data: SSEPayload
+    retry: Optional[int] = None
+
+    def to_bytes(self) -> bytes:
+        return serialize_sse_event(
+            event=self.event,
+            data=BaseModel.model_validate(self.data),
+            id=self.id,
+            retry=self.retry
+        ).encode("utf-8")
+
+
+def serialize_sse_event(
+    *,
+    event: str,
+    data: BaseModel,
+    id: Optional[str] = None,
+    retry: Optional[int] = None
+) -> str:
+    lines: list[str] = []
+    if id is not None:
+        lines.append(f"id: {id}")
+    if event:
+        lines.append(f"event: {event}")
+    if retry:
+        lines.append(f"retry: {retry}")
+    payload = data.model_dump_json()
+    for line in payload.splitlines():
+        lines.append(f"data: {line}")
+    return "\n".join(lines) + "\n\n"

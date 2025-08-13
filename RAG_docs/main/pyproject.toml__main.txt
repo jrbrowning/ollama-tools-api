@@ -63,8 +63,8 @@ target-version = ["py311"]
 skip-string-normalization = false
 
 [tool.poe.tasks]
-debug-test = "python -Xfrozen_modules=off -m debugpy --listen 5678 --wait-for-client run_tests.py"
-test = "python run_tests.py"
+debug-test = "python -Xfrozen_modules=off -m debugpy --listen 5678 --wait-for-client toolbench/run_tests.py"
+test = "python toolbench/run_tests.py"
 export-main = "python scripts/export_branch_txt_for_ollama.py --branch main"
 ollama-capacity = "python scripts/model_support_check.py"
 local-ollama-start = "python run_local_gpu.py up"

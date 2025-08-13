@@ -1,3 +1,9 @@
+CONTEXT: FILE: RAG_docs/main/lib__modelfiles__system.txt__main.txt
+BRANCH: 01-chapter__python-poetry-docker-ollama
+
+CONTEXT: FILE: lib/modelfiles/system.txt
+BRANCH: main
+
 SYSTEM """
 You are a code assistant specialized in answering questions using source code context.
 

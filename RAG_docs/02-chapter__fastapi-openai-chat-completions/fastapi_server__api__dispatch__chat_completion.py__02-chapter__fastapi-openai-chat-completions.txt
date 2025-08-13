@@ -1,0 +1,42 @@
+CONTEXT: FILE: fastapi_server/api/dispatch/chat_completion.py
+BRANCH: 02-chapter__fastapi-openai-chat-completions
+
+# File: api/dispatch/chat_completion.py
+
+from fastapi import HTTPException
+from fastapi.responses import Response
+from models.llm_request import LLMRequest
+
+# from api.handlers.mcp.chat_completion import mcp_chat_completion_sync
+from api.handlers.openai.chat_completion import openai_chat_completion
+
+
+async def dispatch_chat_completion(
+    payload: LLMRequest,
+    model_name: str,
+    base_url: str,
+    protocol: str,
+) -> Response:
+    if protocol == "openai":
+        return await openai_chat_completion(
+            stage_id=payload.stage_id,
+            base_url=base_url,
+            model_name=model_name,
+            user_prompt=payload.user_prompt,
+            system_prompt=payload.system_prompt,
+            max_tokens=payload.max_tokens,
+            temperature=payload.temperature,
+        )
+
+    # if protocol == "mcp":
+    #     return await mcp_chat_completion_sync(
+    #         stage_id=payload.stage_id,
+    #         base_url=base_url,
+    #         model_name=model_name,
+    #         user_prompt=payload.user_prompt,
+    #         system_prompt=payload.system_prompt,
+    #         max_tokens=payload.max_tokens,
+    #         temperature=payload.temperature,
+    #     )
+
+    raise HTTPException(status_code=501, detail=f"Unsupported protocol: {protocol}")

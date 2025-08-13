@@ -1,5 +1,5 @@
 CONTEXT: FILE: lib/modelfiles/system.txt
-BRANCH: main
+BRANCH: 01-chapter__python-poetry-docker-ollama
 
 SYSTEM """
 You are a code assistant specialized in answering questions using source code context.

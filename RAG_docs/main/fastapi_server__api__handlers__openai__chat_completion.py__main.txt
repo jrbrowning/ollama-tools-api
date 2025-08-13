@@ -1,0 +1,58 @@
+CONTEXT: FILE: fastapi_server/api/handlers/openai/chat_completion.py
+BRANCH: main
+
+# File: api/handlers/openai/chat_completion.py
+
+from fastapi.responses import JSONResponse
+from models.llm_response import CompletionErrorOutput, TextStageOutput
+
+from api.handlers.openai.chat_common import (
+    build_system_message,
+    build_user_message,
+    get_openai_client,
+    get_token_settings,
+)
+
+
+async def openai_chat_completion(
+    stage_id: str,
+    base_url: str,
+    model_name: str,
+    user_prompt: str,
+    system_prompt: str,
+    max_tokens: list[int],
+    temperature: list[float],
+) -> JSONResponse:
+    client = get_openai_client(base_url)
+    system = build_system_message(system_prompt)
+    user = build_user_message(user_prompt)
+    max_tokens_val, temperature_val = get_token_settings(max_tokens, temperature)
+
+    try:
+        resp = await client.chat.completions.create(
+            model=model_name,
+            messages=[system, user],
+            temperature=temperature_val,
+            stream=False,
+            max_tokens=max_tokens_val,
+            extra_body={"options": {"num_predict": max_tokens_val}},
+        )
+
+        return JSONResponse(
+            content=TextStageOutput(
+                stage_id=f"{stage_id}-chat-final",
+                type="text",
+                text=resp.choices[0].message.content,
+            ).model_dump(),
+            media_type="application/json",
+        )
+
+    except Exception as e:
+        return JSONResponse(
+            content=CompletionErrorOutput(
+                stage_id=f"{stage_id}-chat-error",
+                type="error",
+                message=str(e),
+            ).model_dump(),
+            media_type="application/json",
+        )

@@ -1,0 +1,39 @@
+CONTEXT: FILE: .vscode/settings.json
+BRANCH: 01-chapter__python-poetry-docker-ollama
+
+{
+    // 🌐 Global Format on Save
+    "editor.formatOnSave": true,
+    // 💅 JS/TS: Use Prettier + ESLint
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "always",
+        "source.organizeImports": "always",
+        "source.fixAll": "always"
+    },
+    // ⛔ Disable Prettier for HTML
+    "[html]": {
+        "editor.defaultFormatter": null
+    },
+    // 📝 Use built-in formatter for Markdown (avoid Prettier bugs)
+    "[markdown]": {
+        "editor.defaultFormatter": "vscode.markdown-language-features"
+    },
+    // 🐍 Python Formatting via default formatter (not Ruff directly)
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+        "editor.formatOnPaste": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "always",
+        }
+    },
+    // ✅ Ruff integration (requires Ruff extension)
+    "ruff.lint.enable": true,
+    // 🧠 Python type checking (like TypeScript strict mode)
+    "python.analysis.typeCheckingMode": "strict",
+    // 🧪 Poetry environment resolution
+    "python.defaultInterpreterPath": ".venv/bin/python",
+    // 🔽 Optional: Enable code folding
+    "editor.folding": true
+}

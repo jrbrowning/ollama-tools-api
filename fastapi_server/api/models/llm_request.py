@@ -1,0 +1,32 @@
+# File: models/llm_request.py
+from typing import List, Literal, Optional
+
+from pydantic import BaseModel, Field
+
+# --- Pydantic Models ---
+# DTO (Data Transfer Object) for chat requests
+
+ModelContainer = Literal[
+    "traditional", "traditional_alt", "reasoning", "reasoning_alt", "local_gpu"
+]
+
+
+class LLMRequest(BaseModel):
+    """Request for atomic tool execution unit (single stage)"""
+
+    stage_id: str
+    system_prompt: str
+    user_prompt: str
+    model_container: ModelContainer
+    stream: Optional[bool] = False
+    synthesis: Optional[bool] = None
+
+    prompts: List[str] = Field(
+        default_factory=list, min_length=2, max_length=2
+    )  # [tool_prompt, synthesis_prompt]
+    max_tokens: List[int] = Field(
+        default=[1024, 1024], min_length=2, max_length=2
+    )  # [tool_max, synthesis_max]
+    temperature: List[float] = Field(
+        default=[0.0, 0.0], min_length=2, max_length=2
+    )  # [tool_temp, synthesis_temp]

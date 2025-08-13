@@ -1,0 +1,157 @@
+# File: toolbench/fsm_orchestrator.py
+
+import uuid
+from typing import Union, Optional
+from transitions.extensions import GraphMachine
+from transitions.core import EventData
+
+from models.toolchain_test_case import ToolchainModelStage, ToolchainTestCase
+from models.llm_request import to_toolchain_request
+from models.stage_http_output import (
+    StageHttpTextOutput,
+    StageHttpToolCallOutput,
+    StageHTTPStreamOutput,
+    StageInfo,
+)
+from runner.dispatcher import execute_toolchain_stage
+
+from utils.rich_output import (
+    print_text_stage_output,
+    print_tool_call_output,
+    print_stream_output
+)
+
+
+class ToolCallExecutor:
+    """FSM for atomic tool call units: Chat, Tool Call only OR Tool Call + Synthesis."""
+
+    def __init__(self):
+        NODE_STATES = ["idle", "executing", "success", "failed"]
+        self.debug = True
+
+        self.machine = GraphMachine(
+            model=self,
+            states=NODE_STATES,
+            initial="idle",
+            send_event=True
+        )
+
+        self.result = None
+
+        # Normal flow
+        self.machine.add_transition("start", "idle", "executing")
+        self.machine.add_transition("mark_successful", "executing", "success")
+
+        # Failure paths
+        self.machine.add_transition("mark_failed", "executing", "failed")
+        self.machine.add_transition("recover_from_failure", "executing", "idle")
+        self.machine.add_transition("reset", "success", "idle")
+
+    def start(self, event: Optional[EventData] = None) -> None: ...
+    def mark_successful(self, event: Optional[EventData] = None) -> None: ...
+    def mark_failed(self, event: Optional[EventData] = None) -> None: ...
+    def recover_from_failure(self, event: Optional[EventData] = None) -> None: ...
+    def reset(self, event: Optional[EventData] = None) -> None: ...
+
+    @staticmethod
+    def generate_stage_id() -> str:
+        return str(uuid.uuid4())
+
+    async def execute_stage(
+        self, stage: ToolchainModelStage
+    ) -> Union[StageHttpTextOutput, StageHttpToolCallOutput, StageHTTPStreamOutput]:
+        self.result = None
+        stage_id = self.generate_stage_id()
+        request, endpoint = to_toolchain_request(stage, stage_id=stage_id)
+
+        try:
+            self.start()
+            toolchain_output = await execute_toolchain_stage(request, endpoint_override=endpoint)
+      
+            if isinstance(toolchain_output, StageHttpToolCallOutput):
+                return StageHttpToolCallOutput(
+                    stage_id=stage_id,
+                    type="tool_results",
+                    tool_results=toolchain_output.tool_results,
+                    status=toolchain_output.status,
+                )
+            if isinstance(toolchain_output, StageHttpTextOutput):
+                return StageHttpTextOutput(
+                    stage_id=stage_id,
+                    type="text",
+                    text=toolchain_output.text,
+                    status=toolchain_output.status,
+                )
+
+            # Streaming response    
+            # This is useful for local testing and debugging.
+            #   Essntially, this is a generator that yields lines of text.
+            #   if isinstance(toolchain_output, AsyncGenerator):
+            #     async for line in toolchain_output:
+            #         print(f"[stream] {line}")
+            #
+            #  This creates another output type and makes summarizing the result harder.
+            #  Instead, we collect all lines and return a single StageHttpTextOutput.
+
+            lines: list[str] = []
+            async for line in toolchain_output:
+                lines.append(line)
+
+            self.mark_successful()
+            return StageHTTPStreamOutput(
+                stage_id=stage_id,
+                type="events",
+                events="".join(lines),
+                status=StageInfo(
+                    state="success",
+                    message="Stream completed",
+                    code=None,
+                ),
+            )
+
+             # Normal tool/text response
+
+        except Exception as err:
+            self.mark_failed()
+            status = StageInfo(state="failed", message=str(err), code=None)
+            return self._fail_output(stage_id=stage_id, status=status, stage=stage)
+
+
+    def _fail_output(
+        self,
+        stage_id: str,
+        status: StageInfo,
+        stage: ToolchainModelStage
+    ) -> Union[StageHttpTextOutput, StageHttpToolCallOutput]:
+        if getattr(stage.prompt_tool_spec, "strategy", None) == "tool_call":
+            return StageHttpToolCallOutput(
+                stage_id=stage_id,
+                type="tool_results",
+                tool_results=None,
+
+                status=status,
+            )
+        else:
+            return StageHttpTextOutput(
+                stage_id=stage_id,
+                type="text",
+                text=None,
+                status=status,
+            )
+
+
+def print_stage_result(
+    result: Union[StageHttpTextOutput, StageHttpToolCallOutput, StageHTTPStreamOutput]
+) -> None:
+    if isinstance(result, StageHttpTextOutput):
+        print_text_stage_output(result)
+    elif isinstance(result, StageHttpToolCallOutput):
+        print_tool_call_output(result)
+    else:
+        print_stream_output(result)
+
+
+async def execute_test_case(test_case: ToolchainTestCase) -> None:
+    executor = ToolCallExecutor()
+    result = await executor.execute_stage(test_case.stage_a)
+    print_stage_result(result)
