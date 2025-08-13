@@ -1,3 +1,6 @@
+CONTEXT: FILE: README.md
+BRANCH: 02-chapter__fastapi-openai-chat-completions
+
 ##  Building Tool-Calling patterns with OpenAI-compatible LLMs and Ollama
 - [Course Concept: Using AI to Learn This Course:](#course-concept-using-ai-to-learn-this-course)   
     - [Week 1: Starting from Zero](#week-1-starting-from-zero)
@@ -20,11 +23,9 @@ This 3-week, 9-chapter course builds a full-stack LLM tool-calling system from s
 
 By the end, you have a complete tool-calling application running on your machine with 5 local models. Every layer is yours to modify.
 
-See the [Course Outline](https://github.com/jrbrowning/ollama-tools-api/discussions/8) here
-
 ## Course Concept: Using AI to Learn This Course: 
 
-Each chapter is released as a seperate branch (ie: `02-chapter__fastapi-openai-chat-completions`) which you can reference at any point later.   
+Each chapter is released as a seperate branch (ie `01-chapter__python-poetry-docker-ollama`) which you can reference at any point later.   
 
 The latest chapter will always be merged into `main`.   
 

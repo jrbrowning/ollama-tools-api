@@ -29,6 +29,7 @@ INCLUDE_EXT = {
     ".sh",
 }
 EXCLUDES = {
+    "RAG_docs",
     ".git",
     "poetry.lock",
     ".venv",

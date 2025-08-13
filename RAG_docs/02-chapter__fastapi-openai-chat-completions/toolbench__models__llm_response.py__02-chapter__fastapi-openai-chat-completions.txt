@@ -1,0 +1,17 @@
+CONTEXT: FILE: toolbench/models/llm_response.py
+BRANCH: 02-chapter__fastapi-openai-chat-completions
+
+# File: toolbench/models/llm_response.py
+
+from typing import Dict, Literal, Optional
+from pydantic import BaseModel
+
+class TextStageOutput(BaseModel):
+    stage_id: str
+    type: Literal["text", "error"]
+    text: Optional[str] = None
+
+class ToolStageOutput(BaseModel):
+    stage_id: str
+    type: Literal["tool_results", "error"]
+    tool_results: Optional[Dict[str, str]] = None  # tool_call_id → result
