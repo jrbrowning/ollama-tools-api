@@ -1,0 +1,28 @@
+CONTEXT: FILE: fastapi_server/api/core/http_client.py
+BRANCH: main
+
+# app/core/http_client.py
+
+import httpx
+
+
+class HTTPClientManager:
+    def __init__(self):
+        self.client = None
+
+    async def start(self):
+        timeout = httpx.Timeout(connect=10.0, read=120.0, write=10.0, pool=10.0)
+        limits = httpx.Limits(max_keepalive_connections=20, max_connections=100)
+        self.client = httpx.AsyncClient(timeout=timeout, limits=limits)
+
+    async def stop(self):
+        if self.client:
+            await self.client.aclose()
+
+    def get_client(self) -> httpx.AsyncClient:
+        if not self.client:
+            raise RuntimeError("HTTPClientManager not started")
+        return self.client
+
+
+client_manager = HTTPClientManager()
