@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.core.http_client import client_manager
 from api.routes.completion import router as completion_router
 from api.routes.health import router as health_router
+from api.routes.stream import router as stream_router
 
 
 @asynccontextmanager
@@ -24,6 +25,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(lifespan=lifespan, title="Ollama Docker API Router")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-
 app.include_router(health_router)
 app.include_router(completion_router)  # POST /completion/v1/{chat}
+app.include_router(stream_router)  # POST /stream/v1/{chat}
