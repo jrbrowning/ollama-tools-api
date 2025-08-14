@@ -1,5 +1,5 @@
 CONTEXT: FILE: fastapi_server/api/main.py
-BRANCH: main
+BRANCH: 03-chapter__fastapi-sse-streaming-chat
 
 # File: fastapi_server/api/main.py
 from contextlib import asynccontextmanager

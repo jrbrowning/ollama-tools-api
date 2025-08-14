@@ -1,0 +1,45 @@
+CONTEXT: FILE: toolbench/models/toolchain_test_case.py
+BRANCH: 03-chapter__fastapi-sse-streaming-chat
+
+# toolbench/models/toolchain_test_case.py
+
+
+from typing import Literal, Optional
+
+from pydantic import BaseModel, Field, model_validator
+
+
+ModelContainer = Literal[
+    "traditional", "traditional_alt", "reasoning", "reasoning_alt", "local_gpu"
+]
+
+
+class ToolchainPromptSpec(BaseModel):
+    strategy: Literal["chat_completion", "tool_call", "synthesis", "evaluation", "validate"]
+    temperature: float = Field(default=0.0, ge=0.0, le=2.0)
+    max_tokens: int = Field(default=1024, gt=0)
+
+
+class ToolchainModelStage(BaseModel):
+    system_prompt: str
+    user_prompt: str
+    model_container: ModelContainer
+    stream: bool = False
+    prompt_tool_spec: ToolchainPromptSpec
+    prompt_synthesis_spec: Optional[ToolchainPromptSpec] = None
+    synthesis: bool | None = False
+
+
+class ToolchainTestCase(BaseModel):
+    id: str
+    stage_a: ToolchainModelStage
+    evaluation: bool = False
+    stage_b: Optional[ToolchainModelStage] = None
+
+    @model_validator(mode="after")
+    def validate_evaluation_stage_b(self):
+        if self.evaluation and self.stage_b is None:
+            raise ValueError("stage_b is required when evaluation=True")
+        if not self.evaluation and self.stage_b is not None:
+            raise ValueError("stage_b must be None when evaluation=False")
+        return self
