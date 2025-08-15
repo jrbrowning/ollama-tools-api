@@ -1,3 +1,6 @@
+CONTEXT: FILE: README.md
+BRANCH: 03-chapter__fastapi-sse-streaming-chat
+
 ##  Building Tool-Calling patterns with OpenAI-compatible LLMs and Ollama
 - [Course Concept: Using AI to Learn This Course:](#course-concept-using-ai-to-learn-this-course)   
     - [Week 1: Starting from Zero](#week-1-starting-from-zero)
@@ -70,7 +73,7 @@ This isn't about avoiding cloud services; cloud models are superior in many ways
 
 - **Privacy**: Your prompts, your tools, your data. All on your machine.
 - **Cost**: Learn and experiment without burning through credits. Save them for production.
-- **Speed**: No network latency during development. GPU-accelerated Ollama runs the best. CPU inference in Docker is slower, but works the same.
+- **Speed**: No network latency during development. GPU-accelerated Ollama runs with millisecond response times. CPU inference in Docker is slower but works the same.
 - **Control**: Debug, modify, break, fix. See exactly what's happening.
 
 ---

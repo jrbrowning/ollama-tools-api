@@ -1,0 +1,79 @@
+CONTEXT: FILE: .vscode/launch.json
+BRANCH: 03-chapter__fastapi-sse-streaming-chat
+
+{
+    "version": "0.2.0",
+    "configurations": [
+        // ============================================
+        // OPTION 1: Debug FastAPI in Docker Container
+        // ============================================
+        {
+            "name": "Attach to Docker FastAPI",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}/fastapi_server",
+                    "remoteRoot": "/app"
+                }
+            ]
+        },
+        // ============================================
+        // OPTION 2: Attach to Local Python Process
+        // ============================================
+        {
+            "name": "Attach to Local Python",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            }
+        },
+        // ============================================
+        // OPTION 3: Debug Test Scripts Locally
+        // ============================================
+        {
+            "name": "Debug Toolbench Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/toolbench/run_tests.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/toolbench"
+        },
+        {
+            "name": "Debug Single Test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/toolbench/run_tests.py",
+            "args": [
+                "${input:testId}"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/toolbench"
+        },
+        // ============================================
+        // GENERAL PURPOSE
+        // ============================================
+        {
+            "name": "Debug Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${fileDirname}"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "testId",
+            "description": "Test ID to run",
+            "default": "weather_tool_only",
+            "type": "promptString"
+        }
+    ]
+}
