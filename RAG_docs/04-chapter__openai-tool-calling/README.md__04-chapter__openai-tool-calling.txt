@@ -1,5 +1,5 @@
 CONTEXT: FILE: README.md
-BRANCH: main
+BRANCH: 04-chapter__openai-tool-calling
 
 ##  Building Tool-Calling patterns with OpenAI-compatible LLMs and Ollama
 - [Course Concept: Using AI to Learn This Course:](#course-concept-using-ai-to-learn-this-course)   

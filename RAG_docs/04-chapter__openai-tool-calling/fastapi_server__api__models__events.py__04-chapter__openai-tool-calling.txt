@@ -1,0 +1,120 @@
+CONTEXT: FILE: fastapi_server/api/models/events.py
+BRANCH: 04-chapter__openai-tool-calling
+
+# File: models/events.py
+
+from typing import Any, Literal, Optional, Union
+
+from openai.types.chat import ChatCompletionChunk
+from pydantic import BaseModel
+
+# SSE event type tags
+EVENT_TYPES = Literal[
+    "chat_completion_chunk",
+    "tool_completion_chunk",
+    "tool_summary",
+    "done",
+    "cancel",
+    "error",
+]
+
+
+# ────────────────
+# Stream Payloads
+# ────────────────
+
+
+class ChatCompletionStreamPayload(BaseModel):
+    """
+    OpenAI streaming chunk for text output.
+    Contains delta updates like:
+      - content: streamed text
+      - tool_calls: streaming function call data
+    """
+
+    stage_id: str
+    chunk: ChatCompletionChunk
+
+
+class ToolCompletionStreamPayload(BaseModel):
+    """
+    Result of executing one or more tool calls.
+    Can include arbitrary structured data.
+    """
+
+    stage_id: str
+    tool_results: ChatCompletionChunk
+
+
+class ToolSummaryStreamPayload(BaseModel):
+    """
+    Result of executing one or more tool calls.
+    Can include arbitrary structured data.
+    """
+
+    stage_id: str
+    tool_summary: dict[str, Any]
+
+
+class DonePayload(BaseModel):
+    """Marks the completion of a stage or output stream."""
+
+    stage_id: str
+
+
+class CancelPayload(BaseModel):
+    """Marks cancellation of a stage."""
+
+    stage_id: str
+
+
+class ErrorPayload(BaseModel):
+    """Represents an error that occurred during processing."""
+
+    stage_id: str
+    error: str
+
+
+# ────────────────
+# Event Envelope
+# ────────────────
+
+SSEPayload = Union[
+    ChatCompletionStreamPayload,
+    ToolCompletionStreamPayload,
+    DonePayload,
+    CancelPayload,
+    ErrorPayload,
+]
+
+
+class SSEEvent(BaseModel):
+    id: Optional[str]
+    event: EVENT_TYPES
+    data: SSEPayload
+    retry: Optional[int] = None
+
+    def to_bytes(self) -> bytes:
+        return serialize_sse_event(
+            event=self.event,
+            data=BaseModel.model_validate(self.data),
+            id=self.id,
+            retry=self.retry,
+        ).encode("utf-8")
+
+
+def serialize_sse_event(
+    *, event: EVENT_TYPES, data: BaseModel, id: Optional[str] = None, retry: Optional[int] = None
+) -> str:
+    lines: list[str] = []
+    if id is not None:
+        lines.append(f"id: {id}")
+    if event:
+        lines.append(f"event: {event}")
+    if retry:
+        lines.append(f"retry: {retry}")
+
+    payload = data.model_dump_json()
+    for line in payload.splitlines():
+        lines.append(f"data: {line}")
+    return "\n".join(lines) + "\n\n"

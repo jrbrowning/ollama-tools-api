@@ -1,0 +1,25 @@
+CONTEXT: FILE: fastapi_server/api/handlers/openai/chat_common.py
+BRANCH: 04-chapter__openai-tool-calling
+
+# File: api/handlers/openai/chat_common.py
+
+from typing import List
+
+from openai import AsyncOpenAI
+from openai.types.chat import ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam
+
+
+def build_system_message(system_prompt: str) -> ChatCompletionSystemMessageParam:
+    return {"role": "system", "content": system_prompt}
+
+
+def build_user_message(user_prompt: str) -> ChatCompletionUserMessageParam:
+    return {"role": "user", "content": user_prompt}
+
+
+def get_token_settings(max_tokens: List[int], temperature: List[float]) -> tuple[int, float]:
+    return max_tokens[0], temperature[0]
+
+
+def get_openai_client(base_url: str) -> AsyncOpenAI:
+    return AsyncOpenAI(base_url=base_url, api_key="dummy")

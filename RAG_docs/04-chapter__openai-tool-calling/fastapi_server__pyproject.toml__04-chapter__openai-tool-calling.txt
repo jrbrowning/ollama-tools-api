@@ -1,0 +1,64 @@
+CONTEXT: FILE: fastapi_server/pyproject.toml
+BRANCH: 04-chapter__openai-tool-calling
+
+[tool.poetry]
+name = "ollama-toolbench"
+version = "1.1.1"
+description = "ToolKit"
+authors = ["Jeff Browning <jeff+toolkit@craftcoded.com>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pandas = "^2.0"
+huggingface-hub = ">=0.15.1"
+tenacity = "^8.2.3"
+fastapi = "^0.109.0"
+uvicorn = "^0.24.0"
+httpx = "^0.26.0"
+pydantic = "^2.6.0"
+rich = ">=14.0.0"
+openai = "^1.23.0"
+transitions = "^0.9.0"
+debugpy = "^1.8.1"
+dotenv = "^0.9.9"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+pytest-asyncio = "^0.23.2"
+ruff = "^0.5.3"
+mypy = "^1.8.0"
+pre-commit = "^3.6.2"
+dotenv-linter = "^0.4.0"
+pydocstyle = "^6.3.0"
+black = "^25.1.0"
+poethepoet = "^0.36.0"
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "B"]
+ignore = ["E501"]  # Ignore long lines, you can remove if using formatter
+exclude = ["tests/fixtures/"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+strict = true
+
+[tool.poe.tasks]
+debug-test = "python -Xfrozen_modules=off -m debugpy --listen 5678 --wait-for-client run_tests.py"
+test = "python run_tests.py"
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+skip-string-normalization = false

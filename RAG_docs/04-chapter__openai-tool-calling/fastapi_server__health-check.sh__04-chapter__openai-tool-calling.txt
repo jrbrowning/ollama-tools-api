@@ -1,0 +1,63 @@
+CONTEXT: FILE: fastapi_server/health-check.sh
+BRANCH: 04-chapter__openai-tool-calling
+
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Configuration
+API_HOST="http://localhost:8000"
+
+# These are default set in the docker-compose.yml file. 
+# hardcoded here for simplicity as this is only used for health checks.
+# If you change the main docker-compose.yml file, you should change these too.
+CONTAINERS=("traditional_model" "traditional_model_alt")
+PREFIXES=("traditional" "traditional_alt")
+MODELS=("llama3.1:8b" "qwen2.5-coder:3b")
+TIMEOUT=3
+
+check_ollama_backend() {
+    local container=$1
+    echo "🔍 Checking Ollama container: $container ..."
+    if curl -s --connect-timeout $TIMEOUT "http://$container:11434/api/tags" >/dev/null; then
+        echo "✅ $container container is reachable."
+    else
+        echo "❌ $container container is NOT reachable on port 11434."
+    fi
+}
+
+check_chat_endpoint() {
+    local prefix=$1
+    local model=$2
+    echo "💬 Testing chat endpoint for: $prefix (model: $model) ..."
+
+    local response
+    response=$(curl -s -X POST "http://localhost:8000/${prefix}/api/chat" \
+        -H "Content-Type: application/json" \
+        -d "{
+            \"model\": \"${model}\",
+            \"messages\": [{\"role\": \"user\", \"content\": \"Hello, what model are you?\"}],
+            \"temperature\": 0.2,
+            \"max_tokens\": 50
+        }")
+
+    # Ollama API returns streaming JSON, so just print response
+    echo "✅ [$prefix] - response:"
+    echo "$response"
+}
+
+# --- Start Check ---
+echo "🔧 Running model container health checks..."
+
+for container in "${CONTAINERS[@]}"; do
+    check_ollama_backend "$container"
+done
+
+echo ""
+echo "🔧 Running FastAPI chat endpoint tests..."
+
+for i in "${!PREFIXES[@]}"; do
+    check_chat_endpoint "${PREFIXES[$i]}" "${MODELS[$i]}"
+done
+
+echo ""
+echo "✅ All checks complete."

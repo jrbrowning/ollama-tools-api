@@ -1,0 +1,69 @@
+CONTEXT: FILE: fastapi_server/api/toolkit/tools/get_weather_tool.py
+BRANCH: 04-chapter__openai-tool-calling
+
+import requests
+from openai.types.chat import ChatCompletionToolParam
+from pydantic import BaseModel, Field, ValidationError
+from toolkit.tools.tool_types import ToolProtocol
+
+
+class WeatherInput(BaseModel):
+    latitude: float = Field(..., description="Latitude of the location")
+    longitude: float = Field(..., description="Longitude of the location")
+
+
+class GetWeatherTool(ToolProtocol):
+    @property
+    def name(self) -> str:
+        return "get_weather"
+
+    @property
+    def description(self) -> str:
+        return "Get the current temperature at a given latitude and longitude using Open-Meteo."
+
+    def tool_spec(self) -> ChatCompletionToolParam:
+        return ChatCompletionToolParam(
+            type="function",
+            function={
+                "name": self.name,
+                "description": self.description,
+                "parameters": WeatherInput.model_json_schema(),
+            },
+        )
+
+    def tool_intent_prompt(self) -> str:
+        return ""
+
+    def tool_system_prompt(self) -> str:
+        return (
+            "You are a weather assistant. You will recieve a city name "
+            "and must return the current temperature using the `get_weather` tool.  "
+        )
+
+    def execute(self, input_data: WeatherInput) -> str:
+        lat = input_data.latitude
+        lon = input_data.longitude
+
+        url = (
+            f"https://api.open-meteo.com/v1/forecast"
+            f"?latitude={lat}&longitude={lon}&current=temperature_2m"
+        )
+
+        try:
+            response = requests.get(url, timeout=5)
+            response.raise_for_status()
+            data = response.json()
+            temp = data["current"]["temperature_2m"]
+            return f"The current temperature at ({lat}, {lon}) is {temp}°C."
+        except Exception as e:
+            return f"Failed to retrieve weather data: {str(e)}"
+
+    def run_from_json(self, raw_json: str) -> str:
+        return self.execute(WeatherInput.model_validate_json(raw_json))
+
+    def validate_tool_call(self, raw_json: str) -> bool:
+        try:
+            WeatherInput.model_validate_json(raw_json)
+            return True
+        except ValidationError:
+            return False
