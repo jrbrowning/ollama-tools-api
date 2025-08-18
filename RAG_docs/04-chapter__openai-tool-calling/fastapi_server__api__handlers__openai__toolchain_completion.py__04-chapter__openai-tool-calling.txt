@@ -1,0 +1,129 @@
+CONTEXT: FILE: fastapi_server/api/handlers/openai/toolchain_completion.py
+BRANCH: 04-chapter__openai-tool-calling
+
+# File: api/handlers/toolchain_completion.py
+
+import json
+from typing import Any
+
+from fastapi.responses import JSONResponse
+from models.llm_response import CompletionErrorOutput, TextStageOutput, ToolStageOutput
+from openai.types.chat import (
+    ChatCompletionMessageToolCall,
+)
+from openai.types.chat.chat_completion_message_tool_call import (
+    Function as ToolCallFunction,
+)
+from toolkit.tools.get_weather_tool import GetWeatherTool
+from toolkit.utils.multi_tool_call_parts import MultiToolCallParts
+from toolkit.utils.tool_registry import ToolRegistry
+from toolkit.utils.tool_response_builder import build_tool_response_messages_multi
+
+from api.handlers.openai.chat_common import (
+    build_system_message,
+    build_user_message,
+    get_openai_client,
+)
+
+
+async def openai_toolchain_completion_sync(
+    stage_id: str,
+    base_url: str,
+    model_name: str,
+    user_prompt: str,
+    system_prompt: str,
+    max_tokens: list[int],
+    temperature: list[float],
+    synthesis: bool | None = False,
+) -> JSONResponse:
+    client = get_openai_client(base_url)
+    registry = ToolRegistry([GetWeatherTool()])
+    user = build_user_message(user_prompt)
+    system = build_system_message(system_prompt + " " + registry.concat_tool_system_prompt())
+    max_tool_tokens, tool_temp = max_tokens[0], temperature[0]
+
+    # Phase 1: Tool execution
+    resp = await client.chat.completions.create(
+        model=model_name,
+        messages=[system, user],
+        tools=registry.all_specs(),
+        tool_choice="auto",
+        temperature=tool_temp,
+        stream=False,
+        max_tokens=max_tool_tokens,
+        extra_body={"options": {"num_predict": max_tool_tokens}},
+    )
+
+    tool_calls = resp.choices[0].message.tool_calls or []
+
+    # Qwen-style fallback
+    if not tool_calls:
+        content: str = getattr(resp.choices[0].message, "content", "")
+        try:
+            parsed: dict[str, Any] = json.loads(content)
+            tool_calls = [
+                ChatCompletionMessageToolCall(
+                    id="tool_0",
+                    type="function",
+                    function=ToolCallFunction(
+                        name=parsed["name"],
+                        arguments=json.dumps(parsed["arguments"]),
+                    ),
+                )
+            ]
+        except json.JSONDecodeError:
+            pass
+
+    if not tool_calls:
+        return JSONResponse(
+            CompletionErrorOutput(
+                stage_id=stage_id, type="error", message="No tools called."
+            ).model_dump(),
+            media_type="application/json",
+        )
+
+    tool_call_map = MultiToolCallParts.from_completed(tool_calls)
+
+    validation = registry.validate_all_tool_calls(tool_call_map)
+
+    if not all(r["valid"] for r in validation.values()):
+        return JSONResponse(
+            CompletionErrorOutput(
+                stage_id=stage_id, type="error", message=json.dumps(validation)
+            ).model_dump(),
+            media_type="application/json",
+        )
+
+    tool_results = registry.execute_all_tool_calls(tool_call_map)
+
+    if not synthesis:
+        return JSONResponse(
+            ToolStageOutput(
+                stage_id=stage_id, type="tool_results", tool_results=tool_results
+            ).model_dump(),
+            media_type="application/json",
+        )
+
+    # Phase 2: Synthesis
+    synthesis_tokens, synthesis_temp = max_tokens[1], temperature[1]
+    followup_messages = build_tool_response_messages_multi(system, user, tool_calls, tool_results)
+
+    second_resp = await client.chat.completions.create(
+        model=model_name,
+        messages=followup_messages,
+        tools=registry.all_specs(),
+        tool_choice="auto",
+        temperature=synthesis_temp,
+        stream=False,
+        max_tokens=synthesis_tokens,
+        extra_body={"options": {"num_predict": synthesis_tokens}},
+    )
+
+    return JSONResponse(
+        TextStageOutput(
+            stage_id=stage_id,
+            type="text",
+            text=second_resp.choices[0].message.content,
+        ).model_dump(),
+        media_type="application/json",
+    )

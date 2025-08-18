@@ -1,0 +1,27 @@
+CONTEXT: FILE: toolbench/models/stage_http_input.py
+BRANCH: 04-chapter__openai-tool-calling
+
+# File: toolbench/models/stage_http_input.py
+
+# The FSM needs to work with atomic "stage" input objects—
+# not HTTP-specific, just data for a pipeline box.
+# For maintainability, we define LLMRequest once,
+# then alias it here for clarity and to match the output interface (stage_http_output.py).
+from models.stage_common import StageInfo
+
+from models.llm_request import LLMRequest
+
+# Alias for FSM/pipeline code—import this, not LLMRequest, when authoring orchestration logic.
+class StageHttpInput(LLMRequest):
+    status: StageInfo
+
+
+# Example usage in FSM/orchestrator:
+#
+# from models.stage_http_input import StageHttpInput
+#
+# This mirrors:
+#   from models.stage_http_output import StageHttpTextOutput, StageHttpToolCallOutput
+#
+# FSM only works with StageHttpInput -> StageHttpOutput
+# LLMRequest/LLMResponse are for HTTP API shape only.
