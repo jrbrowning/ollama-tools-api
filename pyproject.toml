@@ -1,3 +1,4 @@
+# File: pyproject.toml
 [tool.poetry]
 name = "ollama-tools-api"
 version = "1.0.0"
@@ -6,7 +7,7 @@ authors = ["Jeff Browning <jeff+ollamatools@craftcoded.com>"]
 package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "3.13.*"
 pandas = "^2.0"
 huggingface-hub = ">=0.15.1"
 tenacity = "^8.2.3"
@@ -37,11 +38,10 @@ black = "^25.1.0"
 poethepoet = "^0.36.0"
 streamlit = "^1.47.0"
 
-
 [tool.ruff]
 line-length = 100
 lint.select = ["E", "F", "B"]
-lint.ignore = ["E501"]  # Ignore long lines, you can remove if using formatter
+lint.ignore = ["E501"]
 exclude = ["tests/fixtures/"]
 
 [tool.ruff.format]
@@ -50,13 +50,13 @@ indent-style = "space"
 line-ending = "auto"
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.13"
 ignore_missing_imports = true
 strict = true
 
 [tool.black]
 line-length = 100
-target-version = ["py311"]
+target-version = ["py313"]
 skip-string-normalization = false
 
 [tool.poe.tasks]
@@ -67,6 +67,3 @@ ollama-capacity = "python scripts/model_support_check.py"
 local-ollama-start = "python run_local_gpu.py up"
 local-ollama-stop = "python run_local_gpu.py stop"
 local-ollama-rebuild = "python run_local_gpu.py rebuild"
-
-
-
