@@ -15,7 +15,7 @@ TEST_CASES = [
                 "Only respond with information directly derived from tool output or coordinates."
             ),
             user_prompt="What's going on in Washington, DC today?",
-            model_container="local_gpu",
+            model_container="traditional",
             stream=False,
             prompt_tool_spec=ToolchainPromptSpec(
                 strategy="tool_call",
@@ -24,10 +24,10 @@ TEST_CASES = [
             ),
             prompt_synthesis_spec=ToolchainPromptSpec(
                 strategy="synthesis",
-                max_tokens=256,
-                temperature=0.0,
+                max_tokens=1024,
+                temperature=1.0,
             ),
-            synthesis=False,
+            synthesis=True,
         ),
         evaluation=False,
     ),
