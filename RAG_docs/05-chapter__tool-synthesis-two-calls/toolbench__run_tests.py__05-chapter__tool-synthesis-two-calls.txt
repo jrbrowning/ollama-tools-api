@@ -1,0 +1,53 @@
+CONTEXT: FILE: toolbench/run_tests.py
+BRANCH: 05-chapter__tool-synthesis-two-calls
+
+# File: toolbench/run_tests.py
+
+import asyncio
+
+from fsm_orchestrator import execute_test_case
+from tests.toolchain_test_cases import TEST_CASES
+
+
+async def run_all_tests():
+    """
+    Run all test cases in TEST_CASES sequentially and print results.
+    """
+    for i, test_case in enumerate(TEST_CASES, 1):
+        test_label = f"Test {i}: {test_case.id} | Mode: {test_case.stage_a.prompt_tool_spec.strategy} | Stage A: {test_case.stage_a.model_container} | Stage B: {getattr(test_case.stage_b, 'model_container', 'None')}"
+        try:
+            result = await execute_test_case(test_case)
+            print(f"✅ {test_label} - Completed")
+            print(result)
+        except Exception as e:
+            print(f"❌ {test_label} - Unexpected Error: {type(e).__name__}")
+            print(f"↪ {str(e)}")
+
+
+async def run_single_test(test_id: str):
+    """
+    Run a single test case specified by test_id and print the result.
+    """
+    test_case = next((tc for tc in TEST_CASES if tc.id == test_id), None)
+    if not test_case:
+        print(f"❌ Test case '{test_id}' not found")
+        return
+
+    test_label = f"Test: {test_case.id} | Mode: {test_case.stage_a.prompt_tool_spec.strategy} "
+    try:
+        result = await execute_test_case(test_case)
+        print(f"✅ {test_label} - Finished Test")
+        print(result)
+    except Exception as e:
+        print(f"❌ {test_label} - Unexpected Error: {type(e).__name__}")
+        print(f"↪ {str(e)}")
+
+
+if __name__ == "__main__":
+    # Entry point: runs all tests or a single test based on command-line arguments
+    import sys
+
+    if len(sys.argv) > 1:
+        asyncio.run(run_single_test(sys.argv[1]))
+    else:
+        asyncio.run(run_all_tests())

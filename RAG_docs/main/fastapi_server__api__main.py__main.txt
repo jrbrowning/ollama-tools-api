@@ -29,5 +29,5 @@ app = FastAPI(lifespan=lifespan, title="Ollama Docker API Router")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 app.include_router(health_router)
-app.include_router(completion_router)  # POST /completion/v1/{chat}
-app.include_router(stream_router)  # POST /stream/v1/{chat}
+app.include_router(completion_router)  # POST /completion/v1/{chat,toolchain}
+app.include_router(stream_router)  # POST /stream/v1/{chat,toolchain}

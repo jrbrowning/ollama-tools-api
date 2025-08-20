@@ -1,5 +1,5 @@
 CONTEXT: FILE: bin/setup_poetry_env.sh
-BRANCH: main
+BRANCH: 05-chapter__tool-synthesis-two-calls
 
 # File: scripts/setup_python_poetry.sh
 #!/bin/bash

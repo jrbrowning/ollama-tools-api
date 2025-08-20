@@ -1,10 +1,11 @@
+# File: scripts/setup_python_poetry.sh
 #!/bin/bash
 # Usage: source scripts/setup_python_poetry.sh
 # Purpose: Create/use a local .venv next to pyproject.toml with pyenv + poetry
 
 # === CONFIGURATION ===
-MODE="local"  # 
-PYTHON_VERSION="3.12.2"
+MODE="local"
+PYTHON_VERSION="3.13.0"   # change patch as needed (must be an exact pyenv version)
 
 # === SCRIPT BOOTSTRAP ===
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -63,6 +64,7 @@ if [ "$MODE" = "local" ]; then
     if [ -f "pyproject.toml" ]; then
         echo -e "${GREEN}✅ Found pyproject.toml${NC}"
         pyenv local "$PYTHON_VERSION"
+        export PYENV_VERSION="$PYTHON_VERSION"  # ensure this shell resolves the correct interpreter
         poetry config virtualenvs.in-project true
 
         # Bind Poetry to the exact pyenv interpreter (prevents wrong system python)
@@ -71,28 +73,34 @@ if [ "$MODE" = "local" ]; then
             echo -e "${RED}❌ Could not resolve pyenv python for ${PYTHON_VERSION}${NC}"
             return 1 2>/dev/null || exit 1
         fi
-        poetry env use "$PY_BIN"
 
-        poetry install --no-interaction
-        if [ $? -eq 0 ]; then
-            VENV_PATH="$(poetry env info --path)"
-            echo -e "${BLUE}📁 .venv path: $VENV_PATH${NC}"
-            if [ -d "$VENV_PATH" ]; then
-                # Activate into current shell session
-                # shellcheck disable=SC1090
-                source "$VENV_PATH/bin/activate"
-                echo -e "${GREEN}✅ Activated local .venv environment${NC}"
-                echo -e "${BLUE}🐍 Python: $(which python)${NC}"
+        # If an existing env is for a different major.minor, remove it to avoid reuse
+        if poetry env info -p >/dev/null 2>&1; then
+            EXISTING_MM="$(poetry run python - <<'PY'
+import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")
+PY
+)"
+            if [ "$EXISTING_MM" != "3.13" ]; then
+                echo -e "${YELLOW}🧹 Removing existing Poetry env (Python $EXISTING_MM)...${NC}"
+                poetry env remove --all >/dev/null 2>&1 || true
             fi
-        else
-            echo -e "${RED}❌ Poetry install failed${NC}"
-            return 1 2>/dev/null || exit 1
+        fi
+
+        poetry env use "$PY_BIN"
+        poetry install --no-interaction
+
+        VENV_PATH="$(poetry env info --path)"
+        echo -e "${BLUE}📁 .venv path: $VENV_PATH${NC}"
+        if [ -d "$VENV_PATH" ]; then
+            # shellcheck disable=SC1090
+            source "$VENV_PATH/bin/activate"
+            echo -e "${GREEN}✅ Activated local .venv environment${NC}"
+            echo -e "${BLUE}🐍 Python: $(which python)${NC}"
         fi
     else
         echo -e "${RED}❌ pyproject.toml not found in $(pwd)${NC}"
         return 1 2>/dev/null || exit 1
     fi
-
 else
     # === GLOBAL MODE (intentionally disabled to keep it local) ===
     echo -e "${YELLOW}⚠️ MODE=global disabled. This script is for local .venv only.${NC}"
