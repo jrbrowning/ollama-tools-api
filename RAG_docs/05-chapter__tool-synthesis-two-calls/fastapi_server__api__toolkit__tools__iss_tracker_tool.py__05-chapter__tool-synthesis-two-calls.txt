@@ -1,0 +1,89 @@
+CONTEXT: FILE: fastapi_server/api/toolkit/tools/iss_tracker_tool.py
+BRANCH: 05-chapter__tool-synthesis-two-calls
+
+# File: tools/iss_tracker_tool.py
+
+import requests
+from openai.types.chat import ChatCompletionToolParam
+from pydantic import BaseModel, Field
+from toolkit.tools.tool_types import ToolProtocol
+
+
+class ISSTrackerInput(BaseModel):
+    latitude: float = Field(..., description="Latitude of the observer")
+    longitude: float = Field(..., description="Longitude of the observer")
+
+
+class ISSTrackerTool(ToolProtocol):
+    @property
+    def name(self) -> str:
+        return "iss_tracker"
+
+    @property
+    def description(self) -> str:
+        return "Get the current position of the International Space Station and the next time it will be visible from a given location."
+
+    def tool_spec(self) -> ChatCompletionToolParam:
+        return ChatCompletionToolParam(
+            type="function",
+            function={
+                "name": self.name,
+                "description": self.description,
+                "parameters": ISSTrackerInput.model_json_schema(),
+            },
+        )
+
+    def tool_intent_prompt(self) -> str:
+        return ""
+
+    def tool_system_prompt(self) -> str:
+        return (
+            "You are a space observation assistant. You will receive a latitude and longitude, "
+            "then use the `iss_tracker` tool to return the current position of the ISS and its next visible pass."
+        )
+
+    def execute(self, input_data: ISSTrackerInput) -> str:
+        lat = input_data.latitude
+        lon = input_data.longitude
+
+        try:
+            # Current ISS position
+            iss_now_url = "http://api.open-notify.org/iss-now.json"
+            now_res = requests.get(iss_now_url, timeout=5)
+            now_res.raise_for_status()
+            now_data = now_res.json()
+            iss_lat = now_data["iss_position"]["latitude"]
+            iss_lon = now_data["iss_position"]["longitude"]
+
+            # Next overhead pass
+            pass_url = f"http://api.open-notify.org/iss-pass.json?lat={lat}&lon={lon}&n=1"
+            pass_res = requests.get(pass_url, timeout=5)
+            pass_res.raise_for_status()
+            pass_data = pass_res.json()
+
+            if "response" in pass_data and pass_data["response"]:
+                from datetime import datetime, timezone
+
+                pass_time_unix = pass_data["response"][0]["risetime"]
+                pass_time_str = datetime.fromtimestamp(pass_time_unix, tz=timezone.utc).strftime(
+                    "%Y-%m-%d %H:%M UTC"
+                )
+                duration = pass_data["response"][0]["duration"]
+                visibility = f"Next visible pass: {pass_time_str} for {duration} seconds."
+            else:
+                visibility = "No visible passes in the next few days."
+
+            return f"🛰️ ISS Current Position: lat {iss_lat}, lon {iss_lon}. " f"{visibility}"
+
+        except Exception as e:
+            return f"Failed to retrieve ISS data: {str(e)}"
+
+    def run_from_json(self, raw_json: str) -> str:
+        return self.execute(ISSTrackerInput.model_validate_json(raw_json))
+
+    def validate_tool_call(self, raw_json: str) -> bool:
+        try:
+            ISSTrackerInput.model_validate_json(raw_json)
+            return True
+        except Exception:
+            return False

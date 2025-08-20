@@ -1,0 +1,160 @@
+CONTEXT: FILE: fastapi_server/api/handlers/openai/toolchain_stream.py
+BRANCH: 05-chapter__tool-synthesis-two-calls
+
+# File: api/handlers/openai/toolchain_stream.py
+
+import asyncio
+
+from fastapi.responses import StreamingResponse
+from models.events import (
+    CancelPayload,
+    DonePayload,
+    ErrorPayload,
+    ToolCompletionStreamPayload,
+    ToolSummaryStreamPayload,
+    serialize_sse_event,
+)
+from openai import AsyncOpenAI
+from openai.types.chat import (
+    ChatCompletionSystemMessageParam,
+    ChatCompletionUserMessageParam,
+)
+from toolkit.tools.get_weather_tool import GetWeatherTool
+from toolkit.utils.multi_tool_call_parts import MultiToolCallParts
+from toolkit.utils.tool_registry import ToolRegistry
+from toolkit.utils.tool_response_builder import build_tool_response_messages_multi
+
+from api.handlers.openai.chat_common import (
+    build_system_message,
+    build_user_message,
+    get_openai_client,
+)
+
+
+async def _stream_tool_execution_and_synthesis(
+    stage_id: str,
+    client: AsyncOpenAI,
+    registry: ToolRegistry,
+    system_msg: ChatCompletionSystemMessageParam,
+    user_msg: ChatCompletionUserMessageParam,
+    model_name: str,
+    max_tokens: list[int],
+    temperature: list[float],
+    synthesis: bool | None = False,
+):
+    try:
+        # Phase 1: Streaming tool call extraction
+        multi_tool_call_parts = MultiToolCallParts()
+
+        stream_resp = await client.chat.completions.create(
+            model=model_name,
+            messages=[system_msg, user_msg],
+            tools=registry.all_specs(),
+            tool_choice="auto",
+            temperature=temperature[0],
+            stream=True,
+            max_tokens=max_tokens[0],
+            extra_body={"options": {"num_predict": max_tokens[0]}},
+        )
+
+        # Collect tool calls from stream
+        chunk_id = 0
+        async for chunk in stream_resp:
+            multi_tool_call_parts.add_chunk(chunk)
+            payload = ToolCompletionStreamPayload(stage_id=stage_id, tool_results=chunk)
+            yield serialize_sse_event(
+                id=f"{stage_id}-chunk-{chunk_id}", event="tool_completion_chunk", data=payload
+            )
+            chunk_id += 1
+
+        tool_calls = multi_tool_call_parts.to_message_tool_calls()
+        tool_call_map = multi_tool_call_parts.to_message_tool_call_map()
+
+        # chunk for QWEN is actually a different shape.  It gets fixed inside add_chunk,but raw version being streamed
+        async for chunk in stream_resp:
+            multi_tool_call_parts.add_chunk(chunk)
+            payload = ToolCompletionStreamPayload(stage_id=stage_id, tool_results=chunk)
+            yield serialize_sse_event(
+                id=f"{stage_id}-chunk-{chunk_id}", event="tool_completion_chunk", data=payload
+            )
+            chunk_id += 1
+
+        tool_results = registry.execute_all_tool_calls(tool_call_map)
+        payload = ToolSummaryStreamPayload(stage_id=stage_id, tool_summary=tool_results)
+        yield serialize_sse_event(id="0", event="tool_summary", data=payload)
+
+        if not synthesis:
+            # Tools only - we're done.   Better to check that complete from stream "done"
+            yield serialize_sse_event(
+                id=str(chunk_id), event="done", data=DonePayload(stage_id=stage_id)
+            )
+            return
+
+        # Phase 2: Synthesis streaming
+        followup_messages = build_tool_response_messages_multi(
+            system_msg, user_msg, tool_calls, tool_results
+        )
+
+        second_stream = await client.chat.completions.create(
+            model=model_name,
+            messages=followup_messages,
+            temperature=temperature[1],
+            stream=True,
+            max_tokens=max_tokens[1],
+            extra_body={"options": {"num_predict": max_tokens[1]}},
+        )
+
+        chunk_id = 0
+        async for chunk in second_stream:
+            delta = chunk.choices[0].delta
+            if delta.content:
+                payload = ToolCompletionStreamPayload(stage_id=stage_id, tool_results=chunk)
+                yield serialize_sse_event(
+                    id=f"{stage_id}-chunk-integ-{chunk_id}",
+                    event="tool_completion_chunk",
+                    data=payload,
+                )
+                chunk_id += 1
+
+        yield serialize_sse_event(
+            id=str(chunk_id), event="done", data=DonePayload(stage_id=stage_id)
+        )
+
+    except asyncio.CancelledError:
+        yield serialize_sse_event(id="0", event="cancel", data=CancelPayload(stage_id=stage_id))
+    except Exception as e:
+        yield serialize_sse_event(
+            id="0", event="error", data=ErrorPayload(stage_id=stage_id, error=str(e))
+        )
+
+
+async def openai_toolchain_completion_stream(
+    stage_id: str,
+    base_url: str,
+    model_name: str,
+    user_prompt: str,
+    system_prompt: str,
+    max_tokens: list[int],
+    temperature: list[float],
+    synthesis: bool | None = False,
+) -> StreamingResponse:
+    client = get_openai_client(base_url)
+    registry = ToolRegistry([GetWeatherTool()])
+
+    system_msg = build_system_message(system_prompt + " " + registry.concat_tool_system_prompt())
+    user_msg = build_user_message(user_prompt)
+
+    return StreamingResponse(
+        _stream_tool_execution_and_synthesis(
+            stage_id=stage_id,
+            client=client,
+            registry=registry,
+            system_msg=system_msg,
+            user_msg=user_msg,
+            model_name=model_name,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            synthesis=synthesis,
+        ),
+        media_type="text/event-stream",
+    )

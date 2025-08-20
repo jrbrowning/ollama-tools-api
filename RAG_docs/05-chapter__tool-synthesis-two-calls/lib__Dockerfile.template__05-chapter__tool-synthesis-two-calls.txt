@@ -1,0 +1,50 @@
+CONTEXT: FILE: lib/Dockerfile.template
+BRANCH: 05-chapter__tool-synthesis-two-calls
+
+FROM ollama/ollama:latest
+
+# Install curl using apt
+RUN apt-get update && \
+    apt-get install -y curl && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy the common startup script
+COPY lib/start.sh /app/
+RUN chmod +x /app/start.sh
+
+# Create target directory to avoid missing path issues
+RUN mkdir -p /app/modelfiles
+
+# Conditionally copy system.txt if it exists in build context
+RUN if [ -f lib/modelfiles/system.txt ]; then \
+        cp lib/modelfiles/system.txt /app/modelfiles/ ; \
+    else \
+        echo "No system.txt found, skipping copy."; \
+    fi
+
+# Copy model-specific modelfile if it exists
+# ARG is only available during build time
+ARG MODEL_DIR
+# Use a safer approach that won't fail the build
+RUN echo "Copying modelfiles from ${MODEL_DIR} (if any)"
+# We'll handle the modelfiles in the startup script instead of here
+# to avoid Docker build errors with wildcards
+
+# # Environment variables will be populated from docker-compose
+# ENV MODEL_NAME=""
+# ENV PORT=""
+# ENV BASE_MODEL=""
+# ENV SYSTEM_PROMPT=""
+# ENV PARAMS=""
+
+EXPOSE 11434
+
+# Default command
+ENTRYPOINT ["/app/start.sh"]
+
+# % curl http://localhost:11434/api/generate -d '{
+#   "model": "llama3.2",
+#   "prompt": "What is your mission.   be brief and concise"
+# }'

@@ -1,21 +1,21 @@
-CONTEXT: FILE: fastapi_server/api/routes/stream.py
-BRANCH: main
+CONTEXT: FILE: fastapi_server/api/routes/completion.py
+BRANCH: 05-chapter__tool-synthesis-two-calls
 
-# File: api/routes/stream.py
+# File: api/routes/completion.py
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 from models.llm_request import LLMRequest
 
 from api.config.model_routes import model_map, model_service_map, protocol_map
-from api.dispatch.toolchain_stream import dispatch_toolchain_stream
-from api.dispatch.chat_stream import dispatch_chat_stream
+from api.dispatch.toolchain_completion import dispatch_toolchain_completion
+from api.dispatch.chat_completion import dispatch_chat_completion
 
-router = APIRouter(prefix="/stream/v1")
+router = APIRouter(prefix="/completion/v1")
 
 
 @router.post("/chat", response_model=None)
-async def chat_stream_handler(payload: LLMRequest) -> Response:
+async def chat_completion_handler(payload: LLMRequest) -> Response:
     model_id = payload.model_container
 
     if model_id not in model_map:
@@ -26,7 +26,7 @@ async def chat_stream_handler(payload: LLMRequest) -> Response:
 
     model_name = model_map[model_id]
     base_url = model_service_map.get(model_id)
-    protocol = protocol_map.get(model_id, "openai")
+    protocol = protocol_map.get(model_id, "")
 
     if not model_name:
         raise HTTPException(
@@ -40,7 +40,7 @@ async def chat_stream_handler(payload: LLMRequest) -> Response:
             detail=f"No service configured for model: {model_id}",
         )
 
-    return await dispatch_chat_stream(
+    return await dispatch_chat_completion(
         payload=payload,
         model_name=model_name,
         base_url=f"{base_url}/v1",
@@ -49,7 +49,7 @@ async def chat_stream_handler(payload: LLMRequest) -> Response:
 
 
 @router.post("/toolchain", response_model=None)
-async def toolchain_stream_handler(payload: LLMRequest) -> Response:
+async def toolchain_completion_handler(payload: LLMRequest) -> Response:
     model_id = payload.model_container
 
     if model_id not in model_map:
@@ -74,7 +74,7 @@ async def toolchain_stream_handler(payload: LLMRequest) -> Response:
             detail=f"No service configured for model: {model_id}",
         )
 
-    return await dispatch_toolchain_stream(
+    return await dispatch_toolchain_completion(
         payload=payload,
         model_name=model_name,
         base_url=f"{base_url}/v1",
