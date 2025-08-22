@@ -1,0 +1,115 @@
+CONTEXT: FILE: fastapi_server/api/toolkit/utils/tool_response_builder.py
+BRANCH: 06-chapter__backend-frontend-retrospective
+
+# File: app/chat/build_tool_messages.py
+from typing import List, Sequence, Union, Dict
+
+from openai.types.chat import (
+    ChatCompletionAssistantMessageParam,
+    ChatCompletionMessageToolCall,  # function-call variant
+    ChatCompletionMessageToolCallParam,
+    ChatCompletionSystemMessageParam,
+    ChatCompletionToolMessageParam,
+    ChatCompletionUserMessageParam,
+    ChatCompletionMessageToolCallUnion
+)
+from openai.types.chat.chat_completion_message_tool_call_param import (
+    Function as ToolCallFunctionParam,
+)
+
+"""
+Been reading about how a synthetic user message afterward can help organize the next steps
+if the next course of action it to pass the result back into an LLM for further processing.
+NOTE:  Using 'user' as if you apply assistant, it gets confused and thinks it's already replied.
+       Just an experimental addition now.  
+
+Interestingly, when you add it, the model shifts from chat-mode → tool-control-mode, yielding JSON commands.
+This is an artifact of structured-toolchain prompting — the model switches modes, thinking:
+“I'm inside a controller loop, I should return JSON instructions rather than prose.”
+"""
+
+# Toggle this flag to include a synthetic assistant message after tool responses
+INCLUDE_SYNTHETIC_MESSAGE: bool = False
+
+# Content of the synthetic message if included
+SYNTHETIC_MESSAGE_CONTENT: str = (
+    "All tools have responded. What can you tell me about the results?"
+)
+
+"""
+Canonical Format: tool_calls + tool Role
+
+This function builds the final message structure for the chat completion API,
+Tool Call:  This tells the model to pause, let your system execute the tool call, and then resume the conversation once a tool result is sent.
+            So this assistant message is saying "Here you go.   I ran your tool call and here is the result I came up with."
+
+Tool Response (what you send back):  The role: "tool" message is the only officially supported way to return tool outputs in OpenAI’s API.
+
+Tool Result:  (FYI future me):  There is no tool_result field in OpenAI’s schema. 
+Some internal or agent frameworks (e.g., LangChain, AutoGPT, etc.) invent abstractions like tool_result as an internal representation, 
+but these are not part of the chat.completions protocol.
+
+"""
+def build_tool_response_messages_multi(
+    system_msg: ChatCompletionSystemMessageParam,
+    user_msg: ChatCompletionUserMessageParam,
+    # Accept both List[ChatCompletionMessageToolCall] and List[ChatCompletionMessageToolCallUnion]
+    tool_calls: Sequence[ChatCompletionMessageToolCallUnion],
+    tool_results: Dict[str, str],
+) -> List[
+    Union[
+        ChatCompletionSystemMessageParam,
+        ChatCompletionUserMessageParam,
+        ChatCompletionAssistantMessageParam,
+        ChatCompletionToolMessageParam,
+    ]
+]:
+    # Narrow to function tool calls (only these have .function to map into params)
+    function_calls: List[ChatCompletionMessageToolCall] = [
+        call for call in tool_calls if isinstance(call, ChatCompletionMessageToolCall)
+    ]
+
+    messages: List[
+        Union[
+            ChatCompletionSystemMessageParam,
+            ChatCompletionUserMessageParam,
+            ChatCompletionAssistantMessageParam,
+            ChatCompletionToolMessageParam,
+        ]
+    ] = [
+        system_msg,
+        user_msg,
+        ChatCompletionAssistantMessageParam(
+            role="assistant",
+            content=None,
+            tool_calls=[
+                ChatCompletionMessageToolCallParam(
+                    id=call.id,
+                    type="function",
+                    function=ToolCallFunctionParam(
+                        **call.function.model_dump(exclude_unset=True)
+                    ),
+                )
+                for call in function_calls
+            ],
+        ),
+        *[
+            ChatCompletionToolMessageParam(
+                role="tool",
+                tool_call_id=call.id,
+                content=tool_results[call.id],
+            )
+            for call in function_calls
+            if call.id in tool_results
+        ],
+    ]
+
+    if INCLUDE_SYNTHETIC_MESSAGE:
+        messages.append(
+            ChatCompletionUserMessageParam(
+                role="user",
+                content=SYNTHETIC_MESSAGE_CONTENT,
+            )
+        )
+
+    return messages

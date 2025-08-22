@@ -1,0 +1,105 @@
+CONTEXT: FILE: fastapi_server/api/toolkit/utils/multi_tool_call_parts.py
+BRANCH: 06-chapter__backend-frontend-retrospective
+
+# utils/multi_tool_call_parts.py
+
+import json
+from typing import Dict, List, Sequence
+
+from openai.types.chat import ChatCompletionChunk, ChatCompletionMessageToolCall, ChatCompletionMessageFunctionToolCall, ChatCompletionMessageToolCallUnion
+
+from .tool_call_parts import ToolCallParts
+
+
+class MultiToolCallParts:
+    def __init__(self) -> None:
+        self.tool_calls: Dict[str, ToolCallParts] = {}
+        self.partial_tool_call_buffer: list[str] = []
+
+    @staticmethod
+    def from_completed(
+        calls: Sequence[ChatCompletionMessageToolCallUnion],
+    ) -> Dict[str, ChatCompletionMessageToolCall]:
+        result: Dict[str, ChatCompletionMessageToolCall] = {}
+        for call in calls:
+            if isinstance(call, ChatCompletionMessageFunctionToolCall):
+                # Only function tool calls have .function.name
+                name = call.function.name
+                result[name] = call
+        return result
+
+    def to_message_tool_calls(self) -> List[ChatCompletionMessageToolCall]:
+        return [
+            tool_call
+            for tool_call in (p.to_message_tool_call() for p in self.get_complete_calls())
+            if tool_call is not None
+        ]
+
+    # def add_chunk(self, chunk: ChatCompletionChunk) -> None:
+    #     delta = chunk.choices[0].delta
+    #     if not delta.tool_calls:
+    #         return
+
+    #     for call_delta in delta.tool_calls:
+    #         call_id = call_delta.id or chunk.id or ""
+    #         if not call_id:
+    #             continue  # Cannot track without ID
+
+    #         part = self.tool_calls.setdefault(call_id, ToolCallParts(id=call_id))
+    #         if call_delta.function:
+    #             part.name += call_delta.function.name or ""
+    #             part.arguments += call_delta.function.arguments or ""
+
+    def add_chunk(self, chunk: ChatCompletionChunk) -> None:
+        delta = chunk.choices[0].delta
+
+        # --- OpenAI / LLaMA-style structured calls ---
+        if delta.tool_calls:
+            for call in delta.tool_calls:
+                call_id = call.id or chunk.id or f"tool_{call.index}"
+                part = self.tool_calls.setdefault(call_id, ToolCallParts(id=call_id))
+                if call.function:
+                    part.name += call.function.name or ""
+                    part.arguments += call.function.arguments or ""
+            return
+
+        # --- Qwen-style streamed JSON string ---
+        # non-OpenAI modles do not support multi-tool calls yet, so we assume single call.
+
+        if delta.content:
+            self.partial_tool_call_buffer.append(delta.content)
+            buffer = "".join(self.partial_tool_call_buffer)
+
+            # Defensive: try parsing as single object OR array of tool calls
+            try:
+                parsed = json.loads(buffer)
+                # v1: Qwen (single object)
+                if isinstance(parsed, dict) and "name" in parsed and "arguments" in parsed:
+                    call_id = chunk.id
+                    part = self.tool_calls.setdefault(call_id, ToolCallParts(id=call_id))
+                    part.name = parsed["name"]
+                    part.arguments = json.dumps(parsed["arguments"])
+                    self.partial_tool_call_buffer.clear()
+
+                # v2: Future multi-call (array of tool calls).  Placeholder.
+
+                # if isinstance(parsed, list):
+                #     for idx, call in enumerate(parsed):
+                #         if not isinstance(call, dict):
+                #             continue
+                #         call_id = call.get("id") or f"{chunk.id}_{idx}"
+                #         part = self.tool_calls.setdefault(call_id, ToolCallParts(id=call_id))
+                #         part.name = call.get("name", "")
+                #         part.arguments = json.dumps(call.get("arguments", {}))
+                #     self.partial_tool_call_buffer.clear()
+                #     return
+
+            except json.JSONDecodeError:
+                # Not complete yet, wait for more chunks
+                pass
+
+    def to_message_tool_call_map(self) -> dict[str, ChatCompletionMessageToolCall]:
+        return {call.function.name: call for call in self.to_message_tool_calls()}
+
+    def get_complete_calls(self) -> list[ToolCallParts]:
+        return [p for p in self.tool_calls.values() if p.is_complete() and p.is_json_complete()]

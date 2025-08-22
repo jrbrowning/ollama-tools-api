@@ -1,0 +1,73 @@
+CONTEXT: FILE: fastapi_server/api/toolkit/utils/tool_call_parts.py
+BRANCH: 06-chapter__backend-frontend-retrospective
+
+# utils/tool_call_parts.py
+
+import json
+from dataclasses import dataclass
+from typing import Any, Optional
+
+from openai.types.chat import (
+    ChatCompletionChunk,
+    ChatCompletionMessageToolCall,
+)
+from openai.types.chat.chat_completion_message_tool_call import (
+    Function as ToolCallFunction,
+)
+
+
+@dataclass
+class ToolCallParts:
+    name: str = ""
+    arguments: str = ""
+    id: str = ""
+
+    """
+    ChatCompletionChunk is what you get back from streaming. It contains delta, finish_reason, or index mainly.
+
+    (If you are non-streamin, you will get back choices[].messages
+    This is the fully formed response.)
+    
+    Delta can contain tool_calls (of interest here) or content
+    'tool_calls' is what we want.
+    This contains an index (unique tool call), id (unique process call), type (function),
+    and function (which contains arguements and name)
+    """
+
+    def add_chunk(self, chunk: ChatCompletionChunk) -> None:
+        delta = chunk.choices[0].delta
+        if not delta.tool_calls:
+            return
+        call = delta.tool_calls[0]
+        if call.function:
+            self.name += call.function.name or ""
+            self.arguments += call.function.arguments or ""
+        if (
+            not self.id and call.id
+        ):  # Only set id if it's not already set.   Will be unique per tool call.
+            self.id = chunk.id or ""
+
+    def is_complete(self) -> bool:
+        return bool(self.name and self.arguments and self.id)
+
+    def is_json_complete(self) -> bool:
+        """
+        Future check to validate arguments mid flight.  Would like to cancel a stream if failing already.
+        """
+        try:
+            json.loads(self.arguments)
+            return True
+        except Exception:
+            return False
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"name": self.name, "arguments": self.arguments, "id": self.id}
+
+    def to_message_tool_call(self) -> Optional[ChatCompletionMessageToolCall]:
+        if not self.is_complete():
+            return None
+        return ChatCompletionMessageToolCall(
+            id=self.id,
+            type="function",
+            function=ToolCallFunction(name=self.name, arguments=self.arguments),
+        )

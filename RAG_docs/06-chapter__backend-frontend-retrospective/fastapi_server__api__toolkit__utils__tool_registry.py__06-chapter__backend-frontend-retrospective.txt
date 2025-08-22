@@ -1,0 +1,80 @@
+CONTEXT: FILE: fastapi_server/api/toolkit/utils/tool_registry.py
+BRANCH: 06-chapter__backend-frontend-retrospective
+
+from typing import Any, Dict, List, Sequence, Union
+
+from openai.types.chat import ChatCompletionMessageToolCall, ChatCompletionToolParam
+from pydantic import ValidationError
+from toolkit.tools.tool_types import ToolProtocol
+
+ValidationResult = Dict[str, Union[bool, str]]
+
+
+class ToolRegistry:
+    """
+    constructor expects any ordered, iterable container of ToolProtocol items
+    """
+
+    def __init__(self, tools: Sequence[ToolProtocol]) -> None:
+        self.tools = tools
+        self._tool_map: Dict[str, ToolProtocol] = {tool.name: tool for tool in tools}
+
+    def get(self, name: str) -> ToolProtocol:
+        return self._tool_map[name]
+
+    def concat_user_prompt(self, separator: str = "\n\n") -> str:
+        return separator.join(tool.tool_intent_prompt() for tool in self.tools)
+
+    def concat_tool_system_prompt(self, separator: str = "\n\n") -> str:
+        return separator.join(tool.tool_system_prompt() for tool in self.tools)
+
+    def all_specs(self) -> List[ChatCompletionToolParam]:
+        return [tool.tool_spec() for tool in self.tools]
+
+    def names(self) -> List[str]:
+        return list(self._tool_map.keys())
+
+    def validate_all_tool_calls(
+        self, tool_call_map: Dict[str, ChatCompletionMessageToolCall]
+    ) -> Dict[str, ValidationResult]:
+        results: Dict[str, ValidationResult] = {}
+
+        for tool in self.tools:
+            call = tool_call_map.get(tool.name)
+            if not call:
+                results[tool.name] = {"valid": False, "error": "Tool call missing"}
+                continue
+
+            try:
+                tool.validate_tool_call(call.function.arguments)
+                results[tool.name] = {"valid": True}
+            except ValidationError as e:
+                results[tool.name] = {
+                    "valid": False,
+                    "error": str(e),
+                }
+
+        return results
+
+    def execute_all_tool_calls(
+        self, tool_call_map: Dict[str, ChatCompletionMessageToolCall]
+    ) -> Dict[str, str]:
+        results: Dict[str, str] = {}
+
+        for tool in self.tools:
+            call = tool_call_map.get(tool.name)
+            if not call:
+                continue  # Remove this tool from results entirely if missing
+
+            try:
+                result = tool.run_from_json(call.function.arguments)
+            except Exception as e:
+                result = f"[Tool Error] {str(e)}"
+
+            # ✅ Store result keyed by tool_call.id, not tool.name
+            results[call.id] = result
+
+        return results
+
+    def list_metadata(self) -> List[Dict[str, Any]]:
+        return [{"name": t.name, "description": t.description} for t in self.tools]
