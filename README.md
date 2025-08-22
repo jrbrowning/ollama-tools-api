@@ -1,10 +1,4 @@
 ## Building Tool-Calling Patterns with OpenAI-Compatible LLMs and Ollama
-
-This 3-week, 9-chapter course builds a full-stack LLM tool-calling system from scratch.
-
-By the end, you have a complete tool-calling application running on your machine with 5 local models. Every layer is yours to modify.
-
-## Navigation Links
 - [Course Overview](#course-overview)
     - [Week 1: Starting from Zero](#week-1-starting-from-zero)
     - [Week 2: The Tool-Calling Journey](#week-2-the-tool-calling-journey)
@@ -15,9 +9,12 @@ By the end, you have a complete tool-calling application running on your machine
 - [Why Local First?](#why-local-first)
 - [A Note on Terminology](#a-note-on-terminology)
 
----
-
 ## Course Overview
+
+This 3-week, 9-chapter course builds a full-stack LLM tool-calling system from scratch.
+
+By the end, you have a complete tool-calling application running on your machine with 5 local models. Every layer is yours to modify.
+
 This course experiments with AI-assisted learning: each chapter starts with fully operational code and prompts provided in each chapter to learn about the content.
 
 The latest chapter will always be merged into `main`.
