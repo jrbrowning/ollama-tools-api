@@ -1,3 +1,6 @@
+CONTEXT: FILE: README.md
+BRANCH: 06-chapter__backend-frontend-retrospective
+
 ## Building Tool-Calling Patterns with OpenAI-Compatible LLMs and Ollama
 
 This 3-week, 9-chapter course builds a full-stack LLM tool-calling system from scratch.

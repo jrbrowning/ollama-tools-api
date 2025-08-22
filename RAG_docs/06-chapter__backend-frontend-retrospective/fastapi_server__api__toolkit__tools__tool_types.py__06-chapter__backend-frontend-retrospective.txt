@@ -1,0 +1,62 @@
+CONTEXT: FILE: fastapi_server/api/toolkit/tools/tool_types.py
+BRANCH: 06-chapter__backend-frontend-retrospective
+
+# toolkit/tool_types.py
+
+from typing import Protocol, Optional, Literal, Any
+from openai.types.chat import ChatCompletionToolParam
+
+
+class ToolResult:
+    """Standard result container for tool execution"""
+    def __init__(self, data: Any = None, error: Optional[str] = None, is_error: bool = False):
+        self.data = data
+        self.error = error
+        self.is_error = is_error
+
+
+class ToolProtocol(Protocol):
+    @property
+    def name(self) -> str: ...
+    
+    @property
+    def description(self) -> str: ...
+
+    def tool_spec(self) -> ChatCompletionToolParam: ...
+    
+    def tool_intent_prompt(self) -> str: ...
+    
+    def tool_system_prompt(self) -> str: ...
+
+    # Note: `execute()` is not part of the protocol—it's an internal method each tool class must define.
+    # `run_from_json()` assumes `execute()` exists to process parsed arguments and return a result.
+    def run_from_json(self, raw_json: str) -> str: ...
+
+    def validate_tool_call(self, raw_json: str) -> bool: ...
+
+    # ===== FUTURE METHODS =====
+    
+    def output_schema(self) -> Optional[dict[str, Any]]:
+        """Return JSON schema for tool output. Optional for MCP compliance."""
+        return None
+    
+    def mcp_tool_spec(self) -> Optional[dict[str,Any]]:
+        """Generate MCP-compliant tool specification. Optional."""
+        return None
+
+    def format_result(self, result: Any, target_format: Literal["openai", "mcp", "raw"]) -> Optional[dict[str, Any]]:
+        """Format tool result for specific LLM provider. Optional."""
+        return None
+    
+    
+    def get_spec(self, format: Literal["openai", "mcp"]) -> Optional[dict[str, Any]]:
+        """Get tool specification in requested format. Optional."""
+        if format == "openai":
+            spec = self.tool_spec()
+            # ChatCompletionToolParam is a TypedDict, so we convert it to a dict for type compatibility
+            return dict(spec)
+        elif format == "mcp":
+            return self.mcp_tool_spec()
+        return None
+
+    # def validate_tool_call_args(self, args: dict[str, Any]) -> bool: ...

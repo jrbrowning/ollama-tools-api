@@ -1,0 +1,98 @@
+CONTEXT: FILE: toolbench/models/llm_request.py
+BRANCH: 06-chapter__backend-frontend-retrospective
+
+# toolbench/models/llm_request.py
+
+import os
+import uuid
+from pathlib import Path
+from typing import List, Tuple
+
+from dotenv import load_dotenv
+from pydantic import BaseModel, Field
+
+from models.toolchain_test_case import ToolchainModelStage, ModelContainer
+
+# Load .env from parent directory (root level)
+# To get to the root level
+env_path = Path(__file__).parent.parent.parent / ".env"
+load_dotenv(env_path)
+
+LOCAL_GPU = os.getenv("LOCAL_GPU", "")
+TRADITIONAL_MODEL = os.getenv("TRADITIONAL_MODEL", "")
+TRADITIONAL_MODEL_ALT = os.getenv("TRADITIONAL_MODEL_ALT", "")
+REASONING_MODEL = os.getenv("REASONING_MODEL", "")
+REASONING_MODEL_ALT = os.getenv("REASONING_MODEL_ALT", "")
+
+# Real model names set via container-level env vars
+MODEL_MAP = {
+    "traditional": TRADITIONAL_MODEL,
+    "traditional_alt": TRADITIONAL_MODEL_ALT,
+    "reasoning": REASONING_MODEL,
+    "reasoning_alt": REASONING_MODEL_ALT,
+    "local_gpu": LOCAL_GPU,
+}
+
+COMPLETION_CHAT_URL = "http://localhost:8000/completion/v1/chat"
+STREAM_CHAT_URL = "http://localhost:8000/stream/v1/chat"
+COMPLETION_TOOLCHAIN_URL = "http://localhost:8000/completion/v1/toolchain"
+STREAM_TOOLCHAIN_URL = "http://localhost:8000/stream/v1/toolchain"
+
+
+def generate_stage_id() -> str:
+    return str(uuid.uuid4())
+
+
+class LLMRequest(BaseModel):
+    """Request for atomic tool execution unit (single stage)"""
+
+    stage_id: str  # Must be set explicitly by orchestrator
+    system_prompt: str
+    user_prompt: str
+    model_container: ModelContainer
+    stream: bool = False
+    synthesis: bool| None = False
+
+    max_tokens: List[int] = Field(
+        default=[1024, 1024], min_length=2, max_length=2
+    )  # [tool_max, synthesis_max]
+    temperature: List[float] = Field(
+        default=[0.0, 0.0], min_length=2, max_length=2
+    )  # [tool_temp, synthesis_temp]
+
+
+def to_toolchain_request(stage: ToolchainModelStage, stage_id: str) -> Tuple[LLMRequest, str]:
+    synthesis = stage.synthesis and stage.prompt_synthesis_spec is not None
+
+    max_tokens = [
+        stage.prompt_tool_spec.max_tokens,
+        stage.prompt_synthesis_spec.max_tokens
+        if stage.prompt_synthesis_spec
+        else stage.prompt_tool_spec.max_tokens,
+    ]
+
+    temperature = [
+        stage.prompt_tool_spec.temperature,
+        stage.prompt_synthesis_spec.temperature
+        if stage.prompt_synthesis_spec
+        else stage.prompt_tool_spec.temperature,
+    ]
+
+    if stage.prompt_tool_spec.strategy == "chat_completion":
+        endpoint_url = STREAM_CHAT_URL if stage.stream else COMPLETION_CHAT_URL
+    else:
+        endpoint_url = STREAM_TOOLCHAIN_URL if stage.stream else COMPLETION_TOOLCHAIN_URL
+
+
+    request = LLMRequest(
+        stage_id=stage_id,
+        system_prompt=stage.system_prompt,
+        user_prompt=stage.user_prompt,
+        model_container=stage.model_container,
+        stream=stage.stream,
+        synthesis=synthesis,
+        max_tokens=max_tokens,
+        temperature=temperature,
+    )
+
+    return request, endpoint_url

@@ -1,0 +1,26 @@
+CONTEXT: FILE: fastapi_server/api/routes/health.py
+BRANCH: 06-chapter__backend-frontend-retrospective
+
+# app/routes/health.py
+
+from typing import Any, Dict
+
+import httpx
+from fastapi import APIRouter
+
+from api.config.model_routes import model_service_map
+
+router = APIRouter()
+
+
+@router.get("/healthz")
+async def health_checkz() -> Dict[str, Any]:
+    results = {}
+    async with httpx.AsyncClient(timeout=2.0) as client:
+        for name, url in model_service_map.items():
+            try:
+                resp = await client.get(f"{url}/api/tags")
+                results[name] = {"status": "online", "models": resp.json()}
+            except Exception as e:
+                results[name] = {"status": "offline", "error": str(e)}
+    return {"status": "ready", "model_servers": results}
