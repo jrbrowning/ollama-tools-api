@@ -65,16 +65,20 @@ Models are then referenced by their optimization types within the framework. Thi
 
 Each LLM request-response is organized into a stage where each stage supports 6 modes of operation.
 
-| Mode                              | Description                                |
-|------------------------------------|--------------------------------------------|
-| Chat Completion                    | Standard chat response                     |
-| Chat Streaming                     | Real-time chat response streaming          |
-| Tool-call Completion               | Single tool-call response                  |
-| Tool-call Streaming                | Streaming tool-call response               |
-| Tool-call + Synthesis Completion   | Tool-call with synthesis, single response  |
-| Tool-call + Synthesis Streaming    | Tool-call with synthesis, streaming response |
+| # | Mode                              | Description                                |
+|---|------------------------------------|--------------------------------------------|
+| 1 | Chat Completion                    | Standard chat response                     |
+| 2 | Chat Streaming                     | Real-time chat response streaming          |
+| 3 | Tool-call Completion               | Single tool-call response                  |
+| 4 | Tool-call Streaming                | Streaming tool-call response               |
+| 5 | Tool-call + Synthesis Completion   | Tool-call with synthesis, single response  |
+| 6 | Tool-call + Synthesis Streaming    | Tool-call with synthesis, streaming response |
 
-![Stage level](assets/stage.jpeg)
+Modes 1-4
+![Stage Level - chat/tool](assets/stage.jpeg)
+
+Modes 5-6
+![Stage level - tool + syntheses](assets/stage_toolchain_synthesis_streaming.jpeg)
 
 Each model type will be explored in detail throughout the course chapters.
 
