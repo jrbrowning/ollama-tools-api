@@ -6,9 +6,7 @@ from pydantic import BaseModel, Field
 # --- Pydantic Models ---
 # DTO (Data Transfer Object) for chat requests
 
-ModelContainer = Literal[
-    "traditional", "traditional_alt", "reasoning", "reasoning_alt", "local_gpu"
-]
+ModelContainer = Literal["traditional", "traditional_alt", "reasoning", "reasoning_alt"]
 
 
 class LLMRequest(BaseModel):
