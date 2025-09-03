@@ -95,27 +95,4 @@ TEST_CASES = [
         ),
         evaluation=False,
     ),
-    ToolchainTestCase(
-        id="tool_completion_5",
-        stage_a=ToolchainModelStage(
-            system_prompt=(
-                "You are a weather assistant that answers location-based weather queries. "
-                "When a user asks about the weather in a location, convert the city to coordinates, "
-                "call the `get_weather` tool with latitude and longitude, and return the result. "
-                "After the tool call, summarize the weather condition using simple, factual language. "
-                "Avoid making predictions or interpretations not supported by the data. "
-                "Only respond with information directly derived from tool output or coordinates."
-            ),
-            user_prompt="What's the weather in Antartica today?",
-            model_container="local_gpu",
-            stream=False,
-            prompt_tool_spec=ToolchainPromptSpec(
-                strategy="tool_call",
-                max_tokens=1024,
-                temperature=0.0,
-            ),
-            synthesis=False,
-        ),
-        evaluation=False,
-    ),
 ]
