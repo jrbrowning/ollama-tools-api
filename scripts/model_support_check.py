@@ -19,7 +19,6 @@ MODEL_BITS_PER_PARAM: float = 5.25  # Default constant, do not modify
 
 ENV_PATH = ".env"
 MODEL_KEYS = [
-    "LOCAL_GPU",
     "TRADITIONAL_MODEL",
     "TRADITIONAL_MODEL_ALT",
     "REASONING_MODEL",

@@ -24,10 +24,6 @@ brew_packages.json
 /coverage
 /tmp
 
-# next.js
-/.next/
-/out/
-
 # production
 /build
 
@@ -48,22 +44,11 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
-# vercel
-.vercel
-
 # certificates
 certificates
-
-# supabase
-supabase/seed.sql
-supabase/dump-data.sql
 
 # Virutal env
 venv/
 
 # toolshed - developer tool repo
 toolshed
-
-# ollama local
-local_gpu/ollama.pid
-local_gpu/ollama.log

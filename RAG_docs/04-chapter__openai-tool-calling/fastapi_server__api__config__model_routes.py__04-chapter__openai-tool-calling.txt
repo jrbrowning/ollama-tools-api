@@ -5,10 +5,7 @@ BRANCH: 04-chapter__openai-tool-calling
 
 import os
 
-ENABLE_LOCAL_GPU_MODEL = os.getenv("ENABLE_LOCAL_GPU_MODEL", "true").lower() == "true"
-
 # Local models
-LOCAL_GPU = os.getenv("LOCAL_GPU", "")
 TRADITIONAL_MODEL = os.getenv("TRADITIONAL_MODEL", "")
 TRADITIONAL_MODEL_ALT = os.getenv("TRADITIONAL_MODEL_ALT", "")
 REASONING_MODEL = os.getenv("REASONING_MODEL", "")
@@ -50,19 +47,12 @@ protocol_map = {
     "traditional_alt": "openai",
     "reasoning": "openai",
     "reasoning_alt": "openai",
-    "local_gpu": "openai",
     "remote_openai": "openai",
     "claude_sonnet": "mcp",
     "claude_opus": "mcp",
 }
 
-# Optional: enable local GPU model dynamically
-if ENABLE_LOCAL_GPU_MODEL:
-    model_service_map["local_gpu"] = "http://host.docker.internal:11434"
-    model_map["local_gpu"] = LOCAL_GPU
-
 # Debugging
-print(ENABLE_LOCAL_GPU_MODEL, "ENABLE_LOCAL_GPU_MODEL")
 print("model_service_map:", model_service_map)
 print("model_map:", model_map)
 print("protocol_map:", protocol_map)
