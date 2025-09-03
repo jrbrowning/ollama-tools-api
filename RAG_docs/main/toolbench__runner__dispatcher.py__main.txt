@@ -1,0 +1,108 @@
+CONTEXT: FILE: toolbench/runner/dispatcher.py
+BRANCH: main
+
+# File: toolbench/runner/dispatcher.py
+
+from typing import Any, AsyncGenerator, Dict, Union
+
+import httpx
+from models.llm_request import LLMRequest
+from models.stage_http_output import (
+    StageHttpTextOutput,
+    StageHttpToolCallOutput,
+    StageInfo,
+)
+
+
+async def execute_toolchain_stage(
+    request: LLMRequest,
+    endpoint_override: str,
+) -> Union[
+    StageHttpTextOutput,
+    StageHttpToolCallOutput,
+    AsyncGenerator[str, None],
+]:
+    if request.stream:
+
+        async def sse_line_stream() -> AsyncGenerator[str, None]:
+            async with httpx.AsyncClient(timeout=90.0) as client:
+                async with client.stream(
+                    "POST", endpoint_override, json=request.model_dump()
+                ) as resp:
+                    async for line in resp.aiter_lines():
+                        if line:
+                            yield line
+
+        return sse_line_stream()
+
+    async with httpx.AsyncClient(timeout=90.0) as client:
+        return await _non_streaming_stage(client, request, endpoint_override)
+
+
+# ────────────────────────────────
+# Non-Streaming (JSON POST → JSON)
+# ────────────────────────────────
+
+
+async def _non_streaming_stage(
+    client: httpx.AsyncClient,
+    request: LLMRequest,
+    url: str,
+) -> Union[StageHttpTextOutput, StageHttpToolCallOutput]:
+    try:
+        resp = await client.post(url, json=request.model_dump())
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception as e:
+        return StageHttpTextOutput(
+            stage_id=request.stage_id,
+            type="error",
+            status=StageInfo(state="failed", code="NONSTREAM_ERROR", message=str(e)),
+            text=None,
+        )
+
+    return _map_llm_response(data)
+
+
+# ────────────────────────────────
+# Mapper for Final Output
+# ────────────────────────────────
+
+
+def _map_llm_response(
+    llm_result: Dict[str, Any],
+) -> Union[StageHttpTextOutput, StageHttpToolCallOutput]:
+    stage_id = llm_result.get("stage_id", "")
+
+    if llm_result.get("type") == "tool_results":
+        raw = llm_result.get("tool_results", {})
+        results = {k: v if isinstance(v, str) else str(v) for k, v in raw.items()}
+        return StageHttpToolCallOutput(
+            stage_id=stage_id,
+            type="tool_results",
+            tool_results=results,
+            status=StageInfo(
+                state="success",
+                message="Tool Call(s) Successful",
+                code=None,
+            ),
+        )
+
+    if llm_result.get("type") in ("text", "error"):
+        return StageHttpTextOutput(
+            stage_id=stage_id,
+            type=llm_result["type"],
+            text=llm_result.get("text"),
+            status=StageInfo(
+                state="success",
+                message="Completion Successful",
+                code=None,
+            ),
+        )
+
+    return StageHttpTextOutput(
+        stage_id=stage_id,
+        type="error",
+        status=StageInfo(state="failed", code="UNRECOGNIZED", message="Response not recognized"),
+        text=None,
+    )
