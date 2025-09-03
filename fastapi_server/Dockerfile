@@ -48,7 +48,7 @@ RUN chown -R appuser:appuser /app
 USER appuser
 
 # Start FastAPI server
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "api.main:app", "--host", "127.0.0.1", "--port", "8000", "--reload"]
 
 # Want to debug the app with debugpy?
 # Comment the CMD line above and uncomment the one below.
@@ -58,4 +58,4 @@ CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload
 # So just run the app normally first, then attach the debugger (via VSCode) and proceed!   
 
 # Uncomment the line below to enable debugpy.
-# CMD ["python", "-Xfrozen_modules=off", "-m", "debugpy", "--listen", "0.0.0.0:5678", "--wait-for-client", "-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# CMD ["python", "-Xfrozen_modules=off", "-m", "debugpy", "--listen", "127.0.0.1:5678", "--wait-for-client", "-m", "uvicorn", "api.main:app", "--host", "127.0.0.1", "--port", "8000", "--reload"]

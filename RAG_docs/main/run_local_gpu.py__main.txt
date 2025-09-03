@@ -73,7 +73,7 @@ def start_ollama():
 
     log("🚀 Starting Ollama daemon on :11434 …")
     env = os.environ.copy()
-    env["OLLAMA_HOST"] = "0.0.0.0"
+    env["OLLAMA_HOST"] = "127.0.0.1"
     with open(LOG_FILE, "a") as logf:
         proc = subprocess.Popen(["ollama", "serve"], stdout=logf, stderr=logf, env=env)
         with open(PID_FILE, "w") as pidf:
