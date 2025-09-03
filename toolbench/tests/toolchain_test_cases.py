@@ -67,20 +67,4 @@ TEST_CASES = [
         ),
         evaluation=False,
     ),
-    ToolchainTestCase(
-        id="chat_completion_5",
-        stage_a=ToolchainModelStage(
-            system_prompt="You are a helpful travel assistant.",
-            user_prompt="Tell me a little about how the streets are named in Washington, DC.",
-            model_container="local_gpu",
-            stream=True,
-            prompt_tool_spec=ToolchainPromptSpec(
-                strategy="chat_completion",
-                max_tokens=512,
-                temperature=1.0,
-            ),
-            synthesis=False,
-        ),
-        evaluation=False,
-    ),
 ]

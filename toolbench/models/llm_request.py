@@ -6,16 +6,14 @@ from pathlib import Path
 from typing import List, Tuple
 
 from dotenv import load_dotenv
+from models.toolchain_test_case import ModelContainer, ToolchainModelStage
 from pydantic import BaseModel, Field
-
-from models.toolchain_test_case import ToolchainModelStage, ModelContainer
 
 # Load .env from parent directory (root level)
 # To get to the root level
 env_path = Path(__file__).parent.parent.parent / ".env"
 load_dotenv(env_path)
 
-LOCAL_GPU = os.getenv("LOCAL_GPU", "")
 TRADITIONAL_MODEL = os.getenv("TRADITIONAL_MODEL", "")
 TRADITIONAL_MODEL_ALT = os.getenv("TRADITIONAL_MODEL_ALT", "")
 REASONING_MODEL = os.getenv("REASONING_MODEL", "")
@@ -27,7 +25,6 @@ MODEL_MAP = {
     "traditional_alt": TRADITIONAL_MODEL_ALT,
     "reasoning": REASONING_MODEL,
     "reasoning_alt": REASONING_MODEL_ALT,
-    "local_gpu": LOCAL_GPU,
 }
 
 COMPLETION_CHAT_URL = "http://localhost:8000/completion/v1/chat"
@@ -48,7 +45,7 @@ class LLMRequest(BaseModel):
     user_prompt: str
     model_container: ModelContainer
     stream: bool = False
-    synthesis: bool| None = False
+    synthesis: bool | None = False
 
     max_tokens: List[int] = Field(
         default=[1024, 1024], min_length=2, max_length=2
@@ -79,7 +76,6 @@ def to_toolchain_request(stage: ToolchainModelStage, stage_id: str) -> Tuple[LLM
         endpoint_url = STREAM_CHAT_URL if stage.stream else COMPLETION_CHAT_URL
     else:
         endpoint_url = STREAM_TOOLCHAIN_URL if stage.stream else COMPLETION_TOOLCHAIN_URL
-
 
     request = LLMRequest(
         stage_id=stage_id,
