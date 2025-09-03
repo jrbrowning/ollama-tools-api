@@ -1,3 +1,9 @@
+CONTEXT: FILE: RAG_docs/main/run_local_gpu.py__main.txt
+BRANCH: 01-chapter__python-poetry-docker-ollama
+
+CONTEXT: FILE: run_local_gpu.py
+BRANCH: main
+
 # File: run_local_gpu.py
 #!/usr/bin/env python3
 import os

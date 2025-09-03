@@ -1,3 +1,6 @@
+CONTEXT: FILE: README.md
+BRANCH: 01-chapter__python-poetry-docker-ollama
+
 ## Building Tool-Calling Patterns with OpenAI-Compatible LLMs and Ollama
 - [Course Overview](#course-overview)
     - [Week 1: Starting from Zero](#week-1-starting-from-zero)

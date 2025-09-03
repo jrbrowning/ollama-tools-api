@@ -1,3 +1,6 @@
+CONTEXT: FILE: bin/setup_poetry_env.sh
+BRANCH: 01-chapter__python-poetry-docker-ollama
+
 # File: scripts/setup_python_poetry.sh
 #!/bin/bash
 # Usage: source scripts/setup_python_poetry.sh

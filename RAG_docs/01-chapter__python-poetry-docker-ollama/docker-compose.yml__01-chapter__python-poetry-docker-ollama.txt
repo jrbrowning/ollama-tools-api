@@ -1,3 +1,6 @@
+CONTEXT: FILE: docker-compose.yml
+BRANCH: 01-chapter__python-poetry-docker-ollama
+
 services:
   traditional_model:
     build:

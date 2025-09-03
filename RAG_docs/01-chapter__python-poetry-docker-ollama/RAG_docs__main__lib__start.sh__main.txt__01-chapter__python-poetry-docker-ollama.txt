@@ -1,3 +1,9 @@
+CONTEXT: FILE: RAG_docs/main/lib__start.sh__main.txt
+BRANCH: 01-chapter__python-poetry-docker-ollama
+
+CONTEXT: FILE: lib/start.sh
+BRANCH: main
+
 #!/bin/bash
 # Ollama startup script (one model per container)
 
@@ -23,7 +29,7 @@ TMP_MODELPATH="/tmp/Modelfile"
 
 # --- START OLLAMA SERVER ---
 log "🚀 Starting Ollama server"
-export OLLAMA_HOST=0.0.0.0  ## Listen on all interfaces inside Docker
+export OLLAMA_HOST=0.0.0.0
 export OLLAMA_PORT=11434
 ollama serve &
 
