@@ -8,10 +8,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
-
-ModelContainer = Literal[
-    "traditional", "traditional_alt", "reasoning", "reasoning_alt", "local_gpu"
-]
+ModelContainer = Literal["traditional", "traditional_alt", "reasoning", "reasoning_alt"]
 
 
 class ToolchainPromptSpec(BaseModel):

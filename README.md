@@ -8,12 +8,13 @@
     - [Orchestration Pattern](#orchestration-pattern)
 - [Why Local First?](#why-local-first)
 - [A Note on Terminology](#a-note-on-terminology)
+- [Clarification on previous 5 models](#clarification-on-previous-5-models)
 
 ## Course Overview
 
 This 3-week, 9-chapter course builds a full-stack LLM tool-calling system from scratch.
 
-By the end, you have a complete tool-calling application running on your machine with 5 local models. Every layer is yours to modify.
+By the end, you have a complete tool-calling application running on your machine with 4 local models. Every layer is yours to modify.
 
 This course experiments with AI-assisted learning: each chapter starts with fully operational code and prompts provided in each chapter to learn about the content.
 
@@ -94,7 +95,7 @@ This isn't about avoiding cloud services; cloud models are superior in many ways
 
 - **Privacy**: Your prompts, your tools, your data. All on your machine.
 - **Cost**: Learn and experiment without burning through credits. Save them for production.
-- **Speed**: No network latency during development. GPU-accelerated Ollama runs the best. CPU inference in Docker is slower, but works the same.
+- **Speed**: No network latency during development. CPU inference in Docker is slower, but works the same.
 - **Control**: Debug, modify, break, fix. See exactly what's happening.
 
 ### A Note on Terminology
@@ -109,6 +110,13 @@ To me, "agent" describes systems with different orchestration approaches:
 - Autonomous systems: Recursively decompose and execute
 
 Using precise terms clarifies what we're building: tool-calling with synthesis, not autonomous decision loops.
+
+
+### Clarification on previous 5 models
+
+An earlier version of this tutorial enabled a 5 models locally, with one GPU accelerated instance.   While this technically works, the solution wasn't using best practices and has been removed to prevent any confusion.   
+
+The course intention is to demonstrate tool-calling patterns in code.   Elimination of the 5 model doesn't detract from this and makes the code more robust.   For this reason, there are now 4 models instead of 5.  
 
 ---
 Disclaimer: This course is an independent project. I am not affiliated with, sponsored by, or endorsed by any of the companies or creators of the tools mentioned. All opinions and statements are my own and do not represent those of any company.

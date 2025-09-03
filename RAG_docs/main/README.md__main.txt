@@ -2,12 +2,6 @@ CONTEXT: FILE: README.md
 BRANCH: main
 
 ## Building Tool-Calling Patterns with OpenAI-Compatible LLMs and Ollama
-
-This 3-week, 9-chapter course builds a full-stack LLM tool-calling system from scratch.
-
-By the end, you have a complete tool-calling application running on your machine with 5 local models. Every layer is yours to modify.
-
-## Navigation Links
 - [Course Overview](#course-overview)
     - [Week 1: Starting from Zero](#week-1-starting-from-zero)
     - [Week 2: The Tool-Calling Journey](#week-2-the-tool-calling-journey)
@@ -17,10 +11,14 @@ By the end, you have a complete tool-calling application running on your machine
     - [Orchestration Pattern](#orchestration-pattern)
 - [Why Local First?](#why-local-first)
 - [A Note on Terminology](#a-note-on-terminology)
-
----
+- [Clarification on previous 5 models](#clarification-on-previous-5-models)
 
 ## Course Overview
+
+This 3-week, 9-chapter course builds a full-stack LLM tool-calling system from scratch.
+
+By the end, you have a complete tool-calling application running on your machine with 4 local models. Every layer is yours to modify.
+
 This course experiments with AI-assisted learning: each chapter starts with fully operational code and prompts provided in each chapter to learn about the content.
 
 The latest chapter will always be merged into `main`.
@@ -71,16 +69,20 @@ Models are then referenced by their optimization types within the framework. Thi
 
 Each LLM request-response is organized into a stage where each stage supports 6 modes of operation.
 
-| Mode                              | Description                                |
-|------------------------------------|--------------------------------------------|
-| Chat Completion                    | Standard chat response                     |
-| Chat Streaming                     | Real-time chat response streaming          |
-| Tool-call Completion               | Single tool-call response                  |
-| Tool-call Streaming                | Streaming tool-call response               |
-| Tool-call + Synthesis Completion   | Tool-call with synthesis, single response  |
-| Tool-call + Synthesis Streaming    | Tool-call with synthesis, streaming response |
+| # | Mode                              | Description                                |
+|---|------------------------------------|--------------------------------------------|
+| 1 | Chat Completion                    | Standard chat response                     |
+| 2 | Chat Streaming                     | Real-time chat response streaming          |
+| 3 | Tool-call Completion               | Single tool-call response                  |
+| 4 | Tool-call Streaming                | Streaming tool-call response               |
+| 5 | Tool-call + Synthesis Completion   | Tool-call with synthesis, single response  |
+| 6 | Tool-call + Synthesis Streaming    | Tool-call with synthesis, streaming response |
 
-![Stage level](assets/stage.jpeg)
+Modes 1-4
+![Stage Level - chat/tool](assets/stage.jpeg)
+
+Modes 5-6
+![Stage level - tool + syntheses](assets/stage_toolchain_synthesis_streaming.jpeg)
 
 Each model type will be explored in detail throughout the course chapters.
 
@@ -96,7 +98,7 @@ This isn't about avoiding cloud services; cloud models are superior in many ways
 
 - **Privacy**: Your prompts, your tools, your data. All on your machine.
 - **Cost**: Learn and experiment without burning through credits. Save them for production.
-- **Speed**: No network latency during development. GPU-accelerated Ollama runs the best. CPU inference in Docker is slower, but works the same.
+- **Speed**: No network latency during development. CPU inference in Docker is slower, but works the same.
 - **Control**: Debug, modify, break, fix. See exactly what's happening.
 
 ### A Note on Terminology
@@ -111,6 +113,13 @@ To me, "agent" describes systems with different orchestration approaches:
 - Autonomous systems: Recursively decompose and execute
 
 Using precise terms clarifies what we're building: tool-calling with synthesis, not autonomous decision loops.
+
+
+### Clarification on previous 5 models
+
+An earlier version of this tutorial enabled a 5 models locally, with one GPU accelerated instance.   While this technically works, the solution wasn't using best practices and has been removed to prevent any confusion.   
+
+The course intention is to demonstrate tool-calling patterns in code.   Elimination of the 5 model doesn't detract from this and makes the code more robust.   For this reason, there are now 4 models instead of 5.  
 
 ---
 Disclaimer: This course is an independent project. I am not affiliated with, sponsored by, or endorsed by any of the companies or creators of the tools mentioned. All opinions and statements are my own and do not represent those of any company.

@@ -23,7 +23,7 @@ TMP_MODELPATH="/tmp/Modelfile"
 
 # --- START OLLAMA SERVER ---
 log "🚀 Starting Ollama server"
-export OLLAMA_HOST=127.0.0.1
+export OLLAMA_HOST=0.0.0.0  ## Listen on all interfaces inside Docker
 export OLLAMA_PORT=11434
 ollama serve &
 

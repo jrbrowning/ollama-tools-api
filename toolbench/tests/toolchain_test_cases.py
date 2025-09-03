@@ -4,34 +4,9 @@ from models.toolchain_test_case import ToolchainModelStage, ToolchainPromptSpec,
 
 TEST_CASES = [
     ToolchainTestCase(
-        id="synthesis_completion_1",
-        stage_a=ToolchainModelStage(
-            system_prompt=(
-                "Answer as a science fiction writer."
-            ),
-            user_prompt="What's going on in Washington, DC today?",
-            model_container="local_gpu",
-            stream=False,
-            prompt_tool_spec=ToolchainPromptSpec(
-                strategy="tool_call",
-                max_tokens=1024,
-                temperature=0.0,
-            ),
-            prompt_synthesis_spec=ToolchainPromptSpec(
-                strategy="synthesis",
-                max_tokens=1024,
-                temperature=1.0,
-            ),
-            synthesis=True,
-        ),
-        evaluation=False,
-    ),
-       ToolchainTestCase(
         id="synthesis_completion_2",
         stage_a=ToolchainModelStage(
-           system_prompt=(
-                "Answer as a science fiction writer."
-            ),
+            system_prompt=("Answer as a science fiction writer."),
             user_prompt="What's going on in Washington, DC today?",
             model_container="traditional",
             stream=False,
@@ -49,12 +24,10 @@ TEST_CASES = [
         ),
         evaluation=False,
     ),
-        ToolchainTestCase(
+    ToolchainTestCase(
         id="synthesis_completion_3",
         stage_a=ToolchainModelStage(
-          system_prompt=(
-                "Answer as a science fiction writer."
-            ),
+            system_prompt=("Answer as a science fiction writer."),
             user_prompt="What's going on in Washington, DC today?",
             model_container="traditional_alt",
             stream=False,
@@ -72,12 +45,10 @@ TEST_CASES = [
         ),
         evaluation=False,
     ),
-        ToolchainTestCase(
+    ToolchainTestCase(
         id="synthesis_completion_4",
         stage_a=ToolchainModelStage(
-          system_prompt=(
-                "Answer as a science fiction writer."
-            ),
+            system_prompt=("Answer as a science fiction writer."),
             user_prompt="What's going on in Washington, DC today?",
             model_container="reasoning",
             stream=False,
@@ -95,12 +66,10 @@ TEST_CASES = [
         ),
         evaluation=False,
     ),
-        ToolchainTestCase(
+    ToolchainTestCase(
         id="synthesis_completion_5",
         stage_a=ToolchainModelStage(
-          system_prompt=(
-                "Answer as a science fiction writer."
-            ),
+            system_prompt=("Answer as a science fiction writer."),
             user_prompt="What's going on in Washington, DC today?",
             model_container="reasoning_alt",
             stream=False,
